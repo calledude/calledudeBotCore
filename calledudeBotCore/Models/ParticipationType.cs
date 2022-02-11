@@ -1,8 +1,7 @@
-﻿namespace calledudeBot.Models
+﻿namespace calledudeBot.Models;
+
+public enum ParticipationType
 {
-    public enum ParticipationType
-    {
-        Join,
-        Leave
-    }
+    Join,
+    Leave
 }

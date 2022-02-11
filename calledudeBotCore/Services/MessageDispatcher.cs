@@ -3,39 +3,38 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 
-namespace calledudeBot.Services
+namespace calledudeBot.Services;
+
+public interface IMessageDispatcher
 {
-    public interface IMessageDispatcher
+    Task PublishAsync(INotification notification);
+}
+
+public class MessageDispatcher : IMessageDispatcher
+{
+    private readonly ILogger<MessageDispatcher> _logger;
+    private readonly IMediator _mediator;
+
+    public MessageDispatcher(ILogger<MessageDispatcher> logger, IMediator mediator)
     {
-        Task PublishAsync(INotification notification);
+        _logger = logger;
+        _mediator = mediator;
     }
 
-    public class MessageDispatcher : IMessageDispatcher
+    public async Task PublishAsync(INotification notification)
     {
-        private readonly ILogger<MessageDispatcher> _logger;
-        private readonly IMediator _mediator;
+        var notificationType = notification.GetType().Name;
+        _logger.LogInformation("Beginning to publish a {notificationType} message", notificationType);
 
-        public MessageDispatcher(ILogger<MessageDispatcher> logger, IMediator mediator)
+        try
         {
-            _logger = logger;
-            _mediator = mediator;
+            await _mediator.Publish(notification);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An exception was thrown in the MediatR adapter");
         }
 
-        public async Task PublishAsync(INotification notification)
-        {
-            var notificationType = notification.GetType().Name;
-            _logger.LogInformation("Beginning to publish a {0} message", notificationType);
-
-            try
-            {
-                await _mediator.Publish(notification);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An exception was thrown in the MediatR adapter");
-            }
-
-            _logger.LogInformation("Finished invoking {0} handlers", notificationType);
-        }
+        _logger.LogInformation("Finished invoking {notificationType} handlers", notificationType);
     }
 }

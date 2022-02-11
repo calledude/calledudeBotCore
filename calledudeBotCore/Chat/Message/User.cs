@@ -2,27 +2,26 @@
 using System;
 using System.Threading.Tasks;
 
-namespace calledudeBot.Chat
+namespace calledudeBot.Chat;
+
+public sealed class User
 {
-    public sealed class User
+    public string Name { get; }
+
+    private readonly AsyncLazy<bool> _isModerator;
+
+    public User(string userName, bool isMod = false)
     {
-        public string Name { get; }
-
-        private readonly AsyncLazy<bool> _isModerator;
-
-        public User(string userName, bool isMod = false)
-        {
-            Name = userName;
-            _isModerator = new AsyncLazy<bool>(() => Task.FromResult(isMod));
-        }
-
-        public User(string userName, Func<Task<bool>> isModFunc)
-        {
-            Name = userName;
-            _isModerator = new AsyncLazy<bool>(isModFunc);
-        }
-
-        public async Task<bool> IsModerator()
-            => await _isModerator;
+        Name = userName;
+        _isModerator = new AsyncLazy<bool>(() => Task.FromResult(isMod));
     }
+
+    public User(string userName, Func<Task<bool>> isModFunc)
+    {
+        Name = userName;
+        _isModerator = new AsyncLazy<bool>(isModFunc);
+    }
+
+    public async Task<bool> IsModerator()
+        => await _isModerator;
 }

@@ -4,46 +4,46 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace calledudeBot.Chat.Info
+namespace calledudeBot.Chat.Info;
+
+public abstract class CommandParameter
 {
-    public abstract class CommandParameter
+    public List<string> PrefixedWords { get; }
+    public IEnumerable<string> EnclosedWords { get; }
+    public IEnumerable<string> Words { get; }
+
+    protected CommandParameter(IEnumerable<string> param)
     {
-        public List<string> PrefixedWords { get; }
-        public IEnumerable<string> EnclosedWords { get; }
-        public IEnumerable<string> Words { get; }
+        PrefixedWords = param
+            .TakeWhile(x => x[0] == CommandUtils.PREFIX)
+            .ToList();
 
-        protected CommandParameter(IEnumerable<string> param)
-        {
-            PrefixedWords = param
-                .TakeWhile(x => x[0] == CommandUtils.PREFIX)
-                .ToList();
+        EnclosedWords = param
+            .SkipWhile(x => !x.StartsWith("<"));
 
-            EnclosedWords = param
-                .SkipWhile(x => !x.StartsWith("<"));
-
-            Words = param
-                .SkipWhile(x => x[0] == CommandUtils.PREFIX)
-                .TakeWhile(x => !x.StartsWith("<"));
-        }
-
-        public abstract Task<bool> SenderIsMod();
+        Words = param
+            .SkipWhile(x => x[0] == CommandUtils.PREFIX)
+            .TakeWhile(x => !x.StartsWith("<"));
     }
 
-    public class CommandParameter<T> : CommandParameter, IRequest<T> where T : IMessage<T>
+    public abstract Task<bool> SenderIsMod();
+    public abstract IMessage Message { get; }
+}
+
+public class CommandParameter<T> : CommandParameter, IRequest<T> where T : IMessage<T>
+{
+    public override IMessage Message { get; }
+
+    public CommandParameter(IEnumerable<string> param, T message) : base(param)
     {
-        public T Message { get; }
+        Message = message;
+    }
 
-        public CommandParameter(IEnumerable<string> param, T message) : base(param)
-        {
-            Message = message;
-        }
+    public override async Task<bool> SenderIsMod()
+    {
+        if (Message is null)
+            return false;
 
-        public override async Task<bool> SenderIsMod()
-        {
-            if (Message == null)
-                return false;
-
-            return await Message.Sender!.IsModerator();
-        }
+        return await Message.Sender!.IsModerator();
     }
 }

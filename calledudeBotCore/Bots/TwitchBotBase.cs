@@ -1,63 +1,76 @@
-﻿using calledudeBot.Chat;
+﻿using calledudeBot.Bots.Network;
+using calledudeBot.Chat;
 using calledudeBot.Config;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace calledudeBot.Bots
+namespace calledudeBot.Bots;
+
+public abstract class TwitchBotBase : IMessageBot<IrcMessage>
 {
-    public abstract class TwitchBotBase : IMessageBot<IrcMessage>
+    private bool _disposedValue;
+
+    public abstract string Name { get; }
+
+    protected IIrcClient IrcClient { get; }
+    protected string ChannelName { get; }
+    protected string Broadcaster { get; }
+
+    protected TwitchBotBase(IIrcClient ircClient, ITwitchConfig config)
     {
-        public abstract string Name { get; }
+        ChannelName = config.TwitchChannel!;
+        Broadcaster = config.TwitchChannel![1..];
 
-        protected IIrcClient IrcClient { get; }
-        protected string ChannelName { get; }
-        protected string Broadcaster { get; }
+        IrcClient = ircClient;
 
-        protected TwitchBotBase(IIrcClient ircClient, ITwitchConfig config)
+        IrcClient.Server = "irc.chat.twitch.tv";
+        IrcClient.SuccessCode = 366;
+        IrcClient.Nick = config.TwitchBotUsername!;
+        IrcClient.ChannelName = ChannelName;
+        IrcClient.Token = config.TwitchToken!;
+
+        IrcClient.Failures = new HashSet<string>
         {
-            ChannelName = config.TwitchChannel!;
-            Broadcaster = config.TwitchChannel![..1];
+            ":tmi.twitch.tv NOTICE * :Improperly formatted auth",
+            ":tmi.twitch.tv NOTICE * :Login authentication failed",
+        };
+    }
 
-            IrcClient = ircClient;
+    public async Task SendMessageAsync(IrcMessage message)
+        => await IrcClient.SendMessage(message);
 
-            IrcClient.Server = "irc.chat.twitch.tv";
-            IrcClient.SuccessCode = 366;
-            IrcClient.Nick = config.TwitchBotUsername!;
-            IrcClient.ChannelName = ChannelName;
-            IrcClient.Token = config.TwitchToken!;
-
-            IrcClient.Failures = new HashSet<string>
-            {
-                ":tmi.twitch.tv NOTICE * :Improperly formatted auth",
-                ":tmi.twitch.tv NOTICE * :Login authentication failed",
-            };
-        }
-
-        public async Task SendMessageAsync(IrcMessage message)
-            => await IrcClient.SendMessage(message);
-
-        public Task StartAsync(CancellationToken cancellationToken)
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        _ = Task.Run(async () =>
         {
-            _ = Task.Run(async () =>
-            {
-                await IrcClient.Setup();
-                await IrcClient.Start();
-            }, cancellationToken);
+            await IrcClient.Setup();
+            await IrcClient.Start();
+        }, cancellationToken);
 
-            return Task.CompletedTask;
-        }
+        return Task.CompletedTask;
+    }
 
-        public async Task StopAsync(CancellationToken cancellationToken)
-        {
-            await IrcClient.Logout();
-        }
+    public async Task StopAsync(CancellationToken cancellationToken) => await IrcClient.Logout();
 
-        public void Dispose()
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposedValue)
+            return;
+
+        if (disposing)
         {
             IrcClient.Dispose();
-            GC.SuppressFinalize(this);
         }
+
+        _disposedValue = true;
+    }
+
+    public void Dispose()
+    {
+        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

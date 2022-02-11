@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using calledudeBot.Database;
 
+#nullable disable
+
 namespace calledudeBotCore.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
@@ -13,8 +15,7 @@ namespace calledudeBotCore.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder
-                .HasAnnotation("ProductVersion", "5.0.2");
+            modelBuilder.HasAnnotation("ProductVersion", "6.0.1");
 
             modelBuilder.Entity("calledudeBot.Database.UserActivity.UserActivityEntity", b =>
                 {
@@ -23,6 +24,9 @@ namespace calledudeBotCore.Migrations
 
                     b.Property<DateTime>("LastJoinDate")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("MessagesSent")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("TimesSeen")
                         .HasColumnType("INTEGER");
@@ -34,8 +38,9 @@ namespace calledudeBotCore.Migrations
 
             modelBuilder.Entity("calledudeBot.Database.UserSession.UserSessionEntity", b =>
                 {
-                    b.Property<string>("Username")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("TEXT");
@@ -43,10 +48,14 @@ namespace calledudeBotCore.Migrations
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<TimeSpan>("WatchTime")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("Username");
+                    b.HasKey("Id");
 
                     b.ToTable("UserSession");
                 });

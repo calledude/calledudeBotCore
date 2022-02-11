@@ -3,57 +3,70 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace calledudeBot.Database.UserActivity
+namespace calledudeBot.Database.UserActivity;
+
+public interface IUserActivityRepository
 {
-    public interface IUserActivityRepository
+    Task<UserActivityEntity?> GetUserActivity(string user);
+    Task SaveUserActivity(UserParticipationNotification notification);
+    Task SaveUserChatActivity(string userName);
+}
+
+public class UserActivityRepository : IUserActivityRepository
+{
+    private readonly DatabaseContext _context;
+
+    public UserActivityRepository(DatabaseContext context)
     {
-        Task<UserActivityEntity?> GetUserActivity(string user);
-        Task SaveUserActivity(UserParticipationNotification notification);
+        _context = context;
     }
 
-    public class UserActivityRepository : IUserActivityRepository
+    public async Task SaveUserActivity(UserParticipationNotification notification)
     {
-        private readonly DatabaseContext _context;
+        var entity = await GetTrackedUserActivity(notification.User.Name);
 
-        public UserActivityRepository(DatabaseContext context)
+        if (entity == default)
         {
-            _context = context;
+            entity = new UserActivityEntity
+            {
+                LastJoinDate = notification.When,
+                Username = notification.User.Name,
+                TimesSeen = 1
+            };
+
+            await _context.UserActivities.AddAsync(entity);
+        }
+        else
+        {
+            entity.TimesSeen++;
+            _context.UserActivities.Update(entity);
         }
 
-        public async Task SaveUserActivity(UserParticipationNotification notification)
-        {
-            var entity = await _context
+        await _context.SaveChangesAsync();
+    }
+
+    private async Task<UserActivityEntity?> GetTrackedUserActivity(string userName)
+        => await _context
                 .UserActivities
                 .AsTracking()
-                .Where(x => x.Username == notification.User.Name)
+                .Where(x => x.Username == userName)
                 .FirstOrDefaultAsync();
 
-            if (entity == default)
-            {
-                entity = new UserActivityEntity
-                {
-                    LastJoinDate = notification.When,
-                    Username = notification.User.Name,
-                    TimesSeen = 1
-                };
+    public async Task SaveUserChatActivity(string userName)
+    {
+        var entity = await GetTrackedUserActivity(userName);
 
-                await _context.UserActivities!.AddAsync(entity);
-            }
-            else
-            {
-                entity.TimesSeen++;
-                _context.UserActivities!.Update(entity);
-            }
+        if (entity is null)
+            return;
 
-            await _context.SaveChangesAsync();
-        }
+        entity.MessagesSent++;
 
-        public async Task<UserActivityEntity?> GetUserActivity(string user)
-        {
-            return await _context.UserActivities
-                .AsNoTracking()
-                .Where(x => x.Username == user)
-                .FirstOrDefaultAsync();
-        }
+        await _context.SaveChangesAsync();
     }
+
+    public async Task<UserActivityEntity?> GetUserActivity(string user)
+        => await _context.UserActivities
+            .AsNoTracking()
+            .Where(x => x.Username == user)
+            .FirstOrDefaultAsync();
 }
