@@ -3,26 +3,25 @@ using System.Collections.Generic;
 
 namespace calledudeBot.Models;
 
-public class OsuUser
+public record OsuUser
 {
-    [JsonProperty("username")]
-    public string Username { get; set; }
+    [JsonConstructor]
+    public OsuUser(string username, int pp_rank, string level, float pp_raw, float accuracy, int pp_country_rank, List<object> events)
+    {
+        Username = username;
+        Rank = pp_rank;
+        Level = level;
+        PP = pp_raw;
+        Accuracy = accuracy;
+        CountryRank = pp_country_rank;
+        Events = events;
+    }
 
-    [JsonProperty("pp_rank")]
-    public int Rank { get; set; }
-
-    [JsonProperty("level")]
-    public string Level { get; set; }
-
-    [JsonProperty("pp_raw")]
-    public float PP { get; set; }
-
-    [JsonProperty("accuracy")]
-    public float Accuracy { get; set; }
-
-    [JsonProperty("pp_country_rank")]
-    public int CountryRank { get; set; }
-
-    [JsonProperty("events")]
-    public List<object> Events { get; set; }
+    public string Username { get; init; }
+    public int Rank { get; init; }
+    public string Level { get; init; }
+    public float PP { get; init; }
+    public float Accuracy { get; init; }
+    public int CountryRank { get; init; }
+    public List<object> Events { get; init; }
 }

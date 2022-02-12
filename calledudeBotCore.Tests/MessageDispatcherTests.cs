@@ -67,10 +67,10 @@ public class MessageDispatcherTests
 
         var dispatcher = new MessageDispatcher(_logger, mediator);
 
-        var t = dispatcher.PublishAsync(_notification);
-        await t;
+        var publishTask = dispatcher.PublishAsync(_notification);
+        await publishTask;
 
-        Assert.False(t.IsFaulted);
+        Assert.False(publishTask.IsFaulted);
     }
 
     [Fact]
@@ -85,6 +85,9 @@ public class MessageDispatcherTests
 
         var dispatcher = new MessageDispatcher(_logger, mediator);
 
-        await dispatcher.PublishAsync(_notification);
+        var publishTask = dispatcher.PublishAsync(_notification);
+        await publishTask;
+
+        Assert.False(publishTask.IsFaulted);
     }
 }

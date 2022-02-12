@@ -76,7 +76,7 @@ public sealed class RelayHandler : INotificationHandler<RelayNotification<IrcMes
         }
         else if (notification.Bot is TwitchBotBase)
         {
-            var responseContent = $"{message.Sender!.Name}: {message.Content}";
+            var responseContent = $"{message.Sender.Name}: {message.Content}";
             await RelayMessage(notification, responseContent, _steam);
             await RelayMessage(notification, responseContent, _osu);
         }

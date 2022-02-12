@@ -44,7 +44,7 @@ public sealed class TcpClientAdapter : ITcpClient
         _logger.LogWarning("Disconnected. Re-establishing connection..");
         Dispose();
 
-        for (var retryMultiplier = 1; !_tcpClient!.Connected; retryMultiplier *= 2)
+        for (var retryMultiplier = 1; !_tcpClient.Connected; retryMultiplier *= 2)
         {
             try
             {

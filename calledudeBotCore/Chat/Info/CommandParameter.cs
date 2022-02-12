@@ -44,6 +44,6 @@ public class CommandParameter<T> : CommandParameter, IRequest<T> where T : IMess
         if (Message is null)
             return false;
 
-        return await Message.Sender!.IsModerator();
+        return await Message.Sender.IsModerator();
     }
 }

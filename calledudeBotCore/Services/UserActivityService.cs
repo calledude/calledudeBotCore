@@ -45,6 +45,9 @@ public class UserActivityService : IUserActivityService
         }
     }
 
+    public async Task Handle(IMessage<IrcMessage> notification, CancellationToken cancellationToken)
+        => await _userActivityRepository.SaveUserChatActivity(notification.Sender.Name);
+
     private async Task HandleJoin(UserParticipationNotification notification)
         => await _userActivityRepository.SaveUserActivity(notification);
 
@@ -70,7 +73,4 @@ public class UserActivityService : IUserActivityService
         _logger.LogInformation("Logged user session for '{userName}'", notification.User.Name);
         await _userSessionRepository.TrackUserSession(user);
     }
-
-    public async Task Handle(IMessage<IrcMessage> notification, CancellationToken cancellationToken)
-        => await _userActivityRepository.SaveUserChatActivity(notification.Sender.Name);
 }

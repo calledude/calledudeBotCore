@@ -93,13 +93,11 @@ public class SteamBot : Bot<IrcMessage>
     }
 
     private void OnConnected(SteamClient.ConnectedCallback callback)
-    {
-        _steamUser.LogOn(new SteamUser.LogOnDetails
+        => _steamUser.LogOn(new SteamUser.LogOnDetails
         {
             Username = _username,
             Password = _password,
         });
-    }
 
     private async void OnDisconnected(SteamClient.DisconnectedCallback callback)
     {
