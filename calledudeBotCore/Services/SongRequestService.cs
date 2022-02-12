@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Linq;
-using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,22 +20,22 @@ public sealed class SongRequestService : INotificationHandler<IrcMessage>
     private static readonly Regex _beatmapRegex = new(@"https?://osu.ppy.sh/(?:b|beatmapsets/.+?)/(?<BeatmapID>\d+)", RegexOptions.Compiled);
 
     private readonly string _osuAPIToken;
-    private readonly OsuBot _osuBot;
-    private readonly IHttpClientFactory _clientFactory;
+    private readonly IOsuBot _osuBot;
+    private readonly IHttpClientWrapper _client;
     private readonly ILogger<SongRequestService> _logger;
     private readonly IMessageBot<IrcMessage> _twitchBot;
 
     public SongRequestService(
         IOptions<BotConfig> options,
         IMessageBot<IrcMessage> twitchBot,
-        OsuBot osuBot,
-        IHttpClientFactory clientFactory,
+        IOsuBot osuBot,
+        IHttpClientWrapper client,
         ILogger<SongRequestService> logger)
     {
-        var config = options?.Value ?? throw new ArgumentNullException(nameof(options));
+        var config = options.Value ?? throw new ArgumentNullException(nameof(options));
         _osuAPIToken = config.OsuAPIToken!;
         _osuBot = osuBot;
-        _clientFactory = clientFactory;
+        _client = client;
         _logger = logger;
         _twitchBot = twitchBot;
     }
@@ -51,8 +50,7 @@ public sealed class SongRequestService : INotificationHandler<IrcMessage>
         var beatmapID = match.Groups["BeatmapID"];
         var reqLink = string.Format(SONGREQUESTLINK, _osuAPIToken, beatmapID);
 
-        var client = _clientFactory.CreateClient();
-        var (success, osuSongs) = await client.GetAsJsonAsync<OsuSong[]>(reqLink);
+        var (success, osuSongs) = await _client.GetAsJsonAsync<OsuSong[]>(reqLink);
 
         if (!success)
         {
@@ -63,7 +61,7 @@ public sealed class SongRequestService : INotificationHandler<IrcMessage>
         if (osuSongs != default)
         {
             var song = osuSongs.Single();
-            var response = notification.CloneWithMessage($"{notification.Sender!.Name} requested song: [https://osu.ppy.sh/b/{beatmapID} {song.Artist} - {song.Title} [{song.BeatmapVersion}]]");
+            var response = notification.CloneWithMessage($"{notification.Sender.Name} requested song: [https://osu.ppy.sh/b/{beatmapID} {song.Artist} - {song.Title} [{song.BeatmapVersion}]]");
             await _osuBot.SendMessageAsync(response);
         }
         else

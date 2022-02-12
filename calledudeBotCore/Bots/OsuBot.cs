@@ -8,7 +8,11 @@ using System.Threading.Tasks;
 
 namespace calledudeBot.Bots;
 
-public sealed class OsuBot : IMessageBot<IrcMessage>
+public interface IOsuBot : IMessageBot<IrcMessage>
+{
+}
+
+public sealed class OsuBot : IOsuBot
 {
     private readonly IIrcClient _ircClient;
 

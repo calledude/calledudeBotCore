@@ -38,7 +38,8 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IUserActivityService, UserActivityService>()
             .AddTransient<IUserSessionService, UserSessionService>()
             .AddTransient<IIrcClient, IrcClient>()
-            .AddTransient<IOsuUserService, OsuUserService>();
+            .AddTransient<IOsuUserService, OsuUserService>()
+            .AddTransient<IHttpClientWrapper, HttpClientWrapper>();
 
     public static IServiceCollection AddBots(this IServiceCollection services)
         => services
@@ -46,7 +47,7 @@ public static class ServiceCollectionExtensions
             .AddSingleton<ITwitchUser, TwitchUser>()
             .AddSingleton<IMessageBot<DiscordMessage>, DiscordBot>()
             .AddSingleton<SteamBot>()
-            .AddSingleton<OsuBot>()
+            .AddSingleton<IOsuBot, OsuBot>()
             .AddSingleton<IMessageBot<IrcMessage>, TwitchBot>();
 
     public static IServiceCollection AddTwitchConfigs(this IServiceCollection services)

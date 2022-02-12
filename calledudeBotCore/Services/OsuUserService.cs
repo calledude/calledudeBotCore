@@ -8,7 +8,6 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Globalization;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,23 +22,23 @@ public sealed class OsuUserService : IOsuUserService
 {
     private OsuUser? _oldOsuData;
     private readonly Timer _checkTimer;
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IHttpClientWrapper _client;
     private readonly IMessageBot<IrcMessage> _twitch;
     private readonly ILogger<OsuUserService> _logger;
     private readonly string _osuAPIToken;
     private readonly string _osuNick;
 
     public OsuUserService(
-        IHttpClientFactory httpClientFactory,
+        IHttpClientWrapper client,
         IOptions<BotConfig> options,
         IMessageBot<IrcMessage> twitchBot,
         ILogger<OsuUserService> logger)
     {
-        var config = options?.Value ?? throw new ArgumentNullException(nameof(options));
+        var config = options.Value ?? throw new ArgumentNullException(nameof(options));
         _osuAPIToken = config.OsuAPIToken ?? throw new ArgumentNullException("config.OsuAPIToken");
         _osuNick = config.OsuUsername ?? throw new ArgumentNullException("config.OsuUsername");
 
-        _httpClientFactory = httpClientFactory;
+        _client = client;
         _twitch = twitchBot;
         _logger = logger;
         _checkTimer = new Timer(CheckUserUpdate, null, Timeout.Infinite, Timeout.Infinite);
@@ -60,9 +59,7 @@ public sealed class OsuUserService : IOsuUserService
 
         var requestUrl = string.Format("https://osu.ppy.sh/api/get_user?k={0}&u={1}", _osuAPIToken, user);
 
-        var client = _httpClientFactory.CreateClient();
-        var (success, users) = await client.GetAsJsonAsync<OsuUser[]>(requestUrl);
-
+        var (success, users) = await _client.GetAsJsonAsync<OsuUser[]>(requestUrl);
         if (!success)
             return null;
 
