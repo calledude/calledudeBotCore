@@ -139,10 +139,7 @@ public sealed class IrcClient : IIrcClient
     {
         while (loopCondition())
         {
-            if (_tcpClient.InputStream is null)
-                continue;
-
-            var buffer = await _tcpClient.InputStream.ReadLineAsync();
+            var buffer = await _tcpClient.ReadLineAsync();
 
             if (!ShouldFilterMessageFromLogging(buffer))
             {
@@ -217,12 +214,7 @@ public sealed class IrcClient : IIrcClient
     }
 
     public async Task WriteLine(string message)
-    {
-        if (_tcpClient.OutputStream is null)
-            return;
-
-        await _tcpClient.OutputStream.WriteLineAsync(message);
-    }
+        => await _tcpClient.WriteLineAsync(message);
 
     public void Dispose() => _tcpClient.Dispose();
 }

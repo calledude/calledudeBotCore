@@ -11,8 +11,8 @@ public interface ITcpClient : IDisposable
     string? Server { get; set; }
     int Port { get; set; }
     bool Connected { get; }
-    StreamWriter? OutputStream { get; }
-    StreamReader? InputStream { get; }
+    Task<string?> ReadLineAsync();
+    Task WriteLineAsync(string value);
 
     void Close();
     Stream GetStream();
@@ -30,8 +30,8 @@ public sealed class TcpClientAdapter : ITcpClient
     public string? Server { get; set; }
     public int Port { get; set; }
 
-    public StreamWriter? OutputStream { get; private set; }
-    public StreamReader? InputStream { get; private set; }
+    private StreamWriter? OutputStream { get; set; }
+    private StreamReader? InputStream { get; set; }
 
     public TcpClientAdapter(ILogger<TcpClient> logger)
     {
@@ -76,6 +76,22 @@ public sealed class TcpClientAdapter : ITcpClient
         };
 
         InputStream = new StreamReader(_tcpClient.GetStream());
+    }
+
+    public async Task<string?> ReadLineAsync()
+    {
+        if (InputStream is null)
+            return null;
+
+        return await InputStream.ReadLineAsync();
+    }
+
+    public async Task WriteLineAsync(string value)
+    {
+        if (OutputStream is null)
+            return;
+
+        await OutputStream.WriteLineAsync(value);
     }
 
     public Stream GetStream()

@@ -5,12 +5,11 @@ using calledudeBot.Chat.Commands;
 using calledudeBot.Chat.Info;
 using calledudeBot.Config;
 using calledudeBot.Services;
+using calledudeBotCore.Tests.ObjectMothers;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,9 +19,9 @@ namespace calledudeBotCore.Tests;
 
 public class BotTests
 {
-    private static readonly Logger<CommandHandler<IrcMessage>> _commandLogger = new Logger<CommandHandler<IrcMessage>>(NullLoggerFactory.Instance);
-    private static readonly Logger<IrcClient> _ircClientLogger = new Logger<IrcClient>(NullLoggerFactory.Instance);
-    private static readonly Logger<TwitchBot> _twitchLogger = new Logger<TwitchBot>(NullLoggerFactory.Instance);
+    private static readonly Logger<CommandHandler<IrcMessage>> _commandLogger = new(NullLoggerFactory.Instance);
+    private static readonly Logger<IrcClient> _ircClientLogger = new(NullLoggerFactory.Instance);
+    private static readonly Logger<TwitchBot> _twitchLogger = new(NullLoggerFactory.Instance);
 
     [Fact]
     public async Task Mods_Only_Evaluates_Once_Per_Context()
@@ -44,10 +43,9 @@ public class BotTests
                     .Returns("!" + x);
 
                 return cmdMock.Object;
-            })
-            .Cast<Command>();
+            }).ToArray();
 
-        var commandContainer = new Lazy<CommandContainer>(new CommandContainer(fakeCommands));
+        var commandContainer = CommandContainerObjectMother.CreateLazy(fakeCommands);
 
         var botMock = new Mock<IMessageBot<IrcMessage>>();
         var twitchCommandHandler = new CommandHandler<IrcMessage>(_commandLogger, botMock.Object, commandContainer);
@@ -80,22 +78,48 @@ public class BotTests
         await twitch.HandleRawMessage(":tmi.twitch.tv NOTICE #calledude :The moderators of this channel are: CALLEDUDE, calLEDuDeBoT");
         var mods = await twitch.GetMods();
 
+        Assert.Equal(2, mods.Count);
         Assert.Contains("calledude", mods);
         Assert.Contains("calledudebot", mods);
     }
 
-    private static MemoryStream GetStreamFromStrings(List<string> strings)
+    [Fact]
+    public async Task CanHandleMultipleMessagesSimultaneously()
     {
-        var stream = new MemoryStream();
-        var writer = new StreamWriter(stream);
+        var lastLineRead = false;
+        var tcpClient = new Mock<ITcpClient>();
+        tcpClient
+            .SetupSequence(x => x.ReadLineAsync())
+            .ReturnsAsync("this 366 is a success code")
+            .ReturnsAsync(":someUser!someUser@someUser.tmi.twitch.tv PRIVMSG #calledude :!test")
+            .ReturnsAsync(() =>
+            {
+                lastLineRead = true;
+                return ":tmi.twitch.tv NOTICE #calledude :The moderators of this channel are: someUser";
+            });
 
-        foreach (var str in strings)
+        var ircClient = new IrcClient(_ircClientLogger, tcpClient.Object);
+
+        var messageDispatcher = new Mock<IMessageDispatcher>();
+        var twitch = new TwitchBot(ircClient, new TwitchBotConfig() { TwitchChannel = "#calledude" }, messageDispatcher.Object, _twitchLogger);
+
+        var isModCalled = false;
+        messageDispatcher.Setup(x => x.PublishAsync(It.IsAny<IrcMessage>()))
+            .Returns(async (INotification notification) =>
+            {
+                var message = (IrcMessage)notification;
+                await message.Sender.IsModerator();
+                isModCalled = true;
+            });
+
+        await twitch.StartAsync(CancellationToken.None);
+
+        for (var tries = 0; tries < 5 && !isModCalled && !lastLineRead; tries++)
         {
-            writer.WriteLine(str);
-            writer.Flush();
+            await Task.Delay(50);
         }
 
-        stream.Position = 0;
-        return stream;
+        Assert.True(lastLineRead);
+        Assert.True(isModCalled);
     }
 }
