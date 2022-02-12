@@ -1,9 +1,8 @@
 ﻿using calledudeBot.Chat;
 using calledudeBot.Chat.Commands;
 using calledudeBot.Chat.Info;
-using System;
+using calledudeBotCore.Tests.ObjectMothers;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -14,9 +13,7 @@ public class CommandTests
     [Fact]
     public async Task Custom_Command_Only_Alternate_Is_Deleted()
     {
-        var commandContainer = new Lazy<CommandContainer>(() => new CommandContainer(Enumerable.Empty<Command>()));
-        var deleteCmd = new DeleteCommand(commandContainer);
-        commandContainer.Value.Commands.Add(deleteCmd);
+        var (deleteCmd, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new DeleteCommand(container));
 
         const string alternateName = "!yo";
         const string cmdName = "!hi";
@@ -40,9 +37,7 @@ public class CommandTests
     [Fact]
     public async Task Custom_Command_And_Alternates_Gets_Deleted_Properly()
     {
-        var commandContainer = new Lazy<CommandContainer>(() => new CommandContainer(Enumerable.Empty<Command>()));
-        var deleteCmd = new DeleteCommand(commandContainer);
-        commandContainer.Value.Commands.Add(deleteCmd);
+        var (deleteCmd, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new DeleteCommand(container));
 
         const string alternateName = "!yo";
         const string cmdName = "!hi";
@@ -54,9 +49,9 @@ public class CommandTests
         };
 
         commandContainer.Value.Commands.Add(commandToDelete);
+        var commandParameter = CommandParameterObjectMother.CreateWithMessageContent($"{deleteCmd.Name} {commandToDelete.Name}");
 
-        var messageParams = $"{deleteCmd.Name} {commandToDelete.Name}".Split();
-        var response = await deleteCmd.Handle(new CommandParameter<IrcMessage>(messageParams, new IrcMessage("", null, null)));
+        var response = await deleteCmd.Handle(commandParameter);
 
         Assert.DoesNotContain(commandContainer.Value.Commands, x => x.Key == cmdName || x.Key == alternateName);
         Assert.Equal($"Deleted command '{commandToDelete.Name}'", response);
@@ -65,20 +60,12 @@ public class CommandTests
     [Fact]
     public async Task Command_Gets_Added_Properly()
     {
-        var commandContainer = new Lazy<CommandContainer>(() => new CommandContainer(Enumerable.Empty<Command>()));
-        var addCmd = new AddCommand(commandContainer);
-        commandContainer.Value.Commands.Add(addCmd);
+        var (addCmd, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new AddCommand(container));
 
         var messageContent = $"{addCmd.Name} !test nah fam <nice>";
+        var commandParameter = CommandParameterObjectMother.CreateWithMessageContentAsMod(messageContent);
 
-        var discordMessage = new DiscordMessage(
-            messageContent,
-            "",
-            new User("", true),
-            0);
-
-        var commandParam = new CommandParameter<DiscordMessage>(messageContent.Split(), discordMessage);
-        var response = await addCmd.Handle(commandParam);
+        var response = await addCmd.Handle(commandParameter);
 
         Assert.Contains(commandContainer.Value.Commands,
             x => x.Value.Name == "!test"

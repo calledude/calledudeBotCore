@@ -42,7 +42,7 @@ public class OsuUserCommandTests
             .Throws<Exception>();
 
         var osuUserCommand = new OsuUserCommand(_osuUserServiceMock.Object, _logger);
-        var commandParameter = CommandParameterObjectMother.CreateWithMessageContent("user");
+        var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent("user");
         var response = await osuUserCommand.Handle(commandParameter);
 
         Assert.Equal("An error occured while getting osu! user data. Try again later.", response);
@@ -59,7 +59,7 @@ public class OsuUserCommandTests
         var osuUserCommand = new OsuUserCommand(_osuUserServiceMock.Object, _logger);
 
         const string userName = "SomeUser";
-        var commandParameter = CommandParameterObjectMother.CreateWithMessageContent(userName);
+        var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent(userName);
         var response = await osuUserCommand.Handle(commandParameter);
 
         Assert.Equal($"Could not find user {userName}", response);
@@ -71,7 +71,7 @@ public class OsuUserCommandTests
     [Fact]
     public async Task FoundUser()
     {
-        var osuUser = OsuUserObjectMother.GetOsuUser();
+        var osuUser = OsuUserObjectMother.CreateOsuUser();
 
         _osuUserServiceMock
             .Setup(x => x.GetOsuUser(It.IsAny<string>()))
@@ -80,7 +80,7 @@ public class OsuUserCommandTests
         var osuUserCommand = new OsuUserCommand(_osuUserServiceMock.Object, _logger);
 
         const string userName = "calledude";
-        var commandParameter = CommandParameterObjectMother.CreateWithMessageContent(userName);
+        var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent(userName);
         var response = await osuUserCommand.Handle(commandParameter);
 
         Assert.Equal($"osu! player {osuUser.Username} - Lv. {osuUser.Level} has 4141.41PP (Global: #42069 - Country: #1337) with 99.95% accuracy", response);

@@ -41,9 +41,9 @@ public class MessageDispatcherTests
     {
         var notificationHandlers = new[]
         {
-                _throwingHandler.Object,
-                _normalHandler.Object
-            };
+            _throwingHandler.Object,
+            _normalHandler.Object
+        };
 
         var mediator = new CustomMediator(_ => notificationHandlers);
 
@@ -60,14 +60,17 @@ public class MessageDispatcherTests
     {
         var notificationHandlers = new[]
         {
-                _throwingHandler.Object
-            };
+            _throwingHandler.Object
+        };
 
         var mediator = new CustomMediator(_ => notificationHandlers);
 
         var dispatcher = new MessageDispatcher(_logger, mediator);
 
-        await dispatcher.PublishAsync(_notification);
+        var t = dispatcher.PublishAsync(_notification);
+        await t;
+
+        Assert.False(t.IsFaulted);
     }
 
     [Fact]
@@ -75,8 +78,8 @@ public class MessageDispatcherTests
     {
         var notificationHandlers = new[]
         {
-                _normalHandler.Object
-            };
+            _normalHandler.Object
+        };
 
         var mediator = new CustomMediator(_ => notificationHandlers);
 

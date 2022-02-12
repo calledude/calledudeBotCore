@@ -1,4 +1,5 @@
 ﻿using calledudeBot.Chat;
+using calledudeBotCore.Tests.ObjectMothers;
 using Xunit;
 
 namespace calledudeBotCore.Tests;
@@ -28,10 +29,7 @@ public class MessageTests
     [Fact]
     public void IRC_CloneMessage_WithMessage_UsesNewMessage()
     {
-        const string user = "calledude";
-        const string message = "test";
-
-        var ircMessage = new IrcMessage(message, "#calledude", new User(user, true));
+        var ircMessage = new IrcMessage("test", "#calledude", UserObjectMother.Empty);
 
         const string expectedContent = "hello";
         var clonedMessage = ircMessage.CloneWithMessage(expectedContent);
@@ -44,10 +42,12 @@ public class MessageTests
     [Fact]
     public void DISCORD_CloneMessage_WithMessage_UsesNewMessage()
     {
-        var discordMessage = new DiscordMessage("test", "#general", new User("calledude#1914", true), 1234);
-        var clonedMessage = discordMessage.CloneWithMessage("hello");
+        var discordMessage = new DiscordMessage("test", "#general", UserObjectMother.EmptyMod, 1234);
 
-        Assert.Equal("hello", clonedMessage.Content);
+        const string expectedContent = "hello";
+        var clonedMessage = discordMessage.CloneWithMessage(expectedContent);
+
+        Assert.Equal(expectedContent, clonedMessage.Content);
         Assert.Equal(discordMessage.Channel, clonedMessage.Channel);
         Assert.Equal(discordMessage.Sender, clonedMessage.Sender);
         Assert.Equal(discordMessage.Destination, clonedMessage.Destination);

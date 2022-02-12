@@ -4,7 +4,7 @@ namespace calledudeBotCore.Tests.ObjectMothers;
 
 public static class OsuUserObjectMother
 {
-    public static OsuUser GetOsuUser()
+    public static OsuUser CreateOsuUser()
         => new()
         {
             Accuracy = 99.95f,

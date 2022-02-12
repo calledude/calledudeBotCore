@@ -2,11 +2,10 @@
 using calledudeBot.Chat;
 using calledudeBot.Chat.Commands;
 using calledudeBot.Services;
+using calledudeBotCore.Tests.ObjectMothers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -34,27 +33,16 @@ public class CommandHandlerTests
         var botMock = new Mock<IMessageBot<DiscordMessage>>();
         botMock.Setup(x => x.SendMessageAsync(It.IsAny<DiscordMessage>())).Verifiable();
 
-        var commandContainer = new Lazy<CommandContainer>(() => new CommandContainer(Enumerable.Empty<Command>()));
+        var commandContainer = CommandContainerObjectMother.CreateLazy();
         var logger = new Logger<CommandHandler<DiscordMessage>>(NullLoggerFactory.Instance);
 
         var commandHandler = new CommandHandler<DiscordMessage>(logger, botMock.Object, commandContainer);
 
-        const string messageContent = "!IDoesNotExist";
-
-        var discordMessage = new DiscordMessage(
-            messageContent,
-            "",
-            new User(
-                "",
-                () => Task.FromResult(true)),
-            0);
-
+        var discordMessage = MessageObjectMother.CreateDiscordMessageWithContent("!IDoesNotExist");
         await commandHandler.Handle(discordMessage, CancellationToken.None);
 
         const string expectedResponse = "Not sure what you were trying to do? That is not an available command. Try '!help' or '!help <command>'";
-        botMock
-            .Verify(x => x.SendMessageAsync(
-                It.Is<DiscordMessage>(x => x.Content == expectedResponse)));
+        botMock.Verify(x => x.SendMessageAsync(It.Is<DiscordMessage>(x => x.Content == expectedResponse)));
     }
 
     [Fact]
@@ -63,21 +51,10 @@ public class CommandHandlerTests
         var botMock = new Mock<IMessageBot<DiscordMessage>>();
         botMock.Setup(x => x.SendMessageAsync(It.IsAny<DiscordMessage>())).Verifiable();
 
-        var commandContainer = new Lazy<CommandContainer>(() => new CommandContainer(Enumerable.Empty<Command>()));
-        var addCmd = new AddCommand(commandContainer);
-        commandContainer.Value.Commands.Add(addCmd);
+        var (add, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new AddCommand(container));
 
-        var logger = new Logger<CommandHandler<DiscordMessage>>(NullLoggerFactory.Instance);
-
-        var commandHandler = new CommandHandler<DiscordMessage>(logger, botMock.Object, commandContainer);
-
-        const string messageContent = "!addcmd !test nah fam <nice>";
-
-        var discordMessage = new DiscordMessage(
-            messageContent,
-            "",
-            new User("", false),
-            0);
+        var commandHandler = new CommandHandler<DiscordMessage>(_logger, botMock.Object, commandContainer);
+        var discordMessage = MessageObjectMother.CreateDiscordMessageWithContent($"{add.Name} !test nah fam <nice>");
 
         await commandHandler.Handle(discordMessage, CancellationToken.None);
 
@@ -88,24 +65,16 @@ public class CommandHandlerTests
     [Fact]
     public async Task Bot_Always_Responds_If_Valid_Command()
     {
-        var commandContainer = new Lazy<CommandContainer>(new CommandContainer(Enumerable.Empty<Command>()));
-
         var cmd = new Command
         {
             Name = "!test",
             Response = "waddup"
         };
 
-        commandContainer.Value.Commands.Add(cmd);
-
+        var commandContainer = CommandContainerObjectMother.CreateLazy(cmd);
         var commandHandler = new CommandHandler<DiscordMessage>(_logger, _botMock.Object, commandContainer);
 
-        await commandHandler.Handle(
-            new DiscordMessage(
-                "!test",
-                "",
-                new User("", false),
-                0), CancellationToken.None);
+        await commandHandler.Handle(MessageObjectMother.CreateDiscordMessageWithContent(cmd.Name), CancellationToken.None);
 
         _botMock.Verify(x => x.SendMessageAsync(It.Is<DiscordMessage>(x => x.Content == "waddup")));
     }
@@ -113,15 +82,10 @@ public class CommandHandlerTests
     [Fact]
     public async Task Bot_Never_Responds_On_Invalid_Command()
     {
-        var commandContainer = new Lazy<CommandContainer>(new CommandContainer(Enumerable.Empty<Command>()));
+        var commandContainer = CommandContainerObjectMother.CreateLazy();
         var commandHandler = new CommandHandler<DiscordMessage>(_logger, _botMock.Object, commandContainer);
 
-        await commandHandler.Handle(
-            new DiscordMessage(
-                "This is a regular message",
-                "",
-                new User("", false),
-                0), CancellationToken.None);
+        await commandHandler.Handle(MessageObjectMother.CreateDiscordMessageWithContent("This is a regular message"), CancellationToken.None);
 
         _botMock.Verify(x => x.SendMessageAsync(It.IsAny<DiscordMessage>()), Times.Never);
     }
@@ -129,19 +93,10 @@ public class CommandHandlerTests
     [Fact]
     public async Task Bot_Responds_On_SpecialCommand_WithParameter()
     {
-        var commandContainer = new Lazy<CommandContainer>(new CommandContainer(Enumerable.Empty<Command>()));
-        var help = new HelpCommand(commandContainer);
-
-        commandContainer.Value.Commands.Add(help);
-
+        var (help, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
         var commandHandler = new CommandHandler<DiscordMessage>(_logger, _botMock.Object, commandContainer);
 
-        await commandHandler.Handle(
-            new DiscordMessage(
-                "!help",
-                "",
-                new User("", false),
-                0), CancellationToken.None);
+        await commandHandler.Handle(MessageObjectMother.CreateDiscordMessageWithContent(help.Name), CancellationToken.None);
 
         _botMock.Verify(x => x.SendMessageAsync(It.Is<DiscordMessage>(x => x.Content == "These are the commands you can use: !help")));
     }
@@ -150,18 +105,10 @@ public class CommandHandlerTests
     public async Task Bot_Responds_On_SpecialCommand_WithoutParameter()
     {
         var uptime = new UptimeCommand(new Mock<IStreamMonitor>().Object);
-        var commandContainer = new Lazy<CommandContainer>(new CommandContainer(Enumerable.Empty<Command>()));
-
-        commandContainer.Value.Commands.Add(uptime);
-
+        var commandContainer = CommandContainerObjectMother.CreateLazy(uptime);
         var commandHandler = new CommandHandler<DiscordMessage>(_logger, _botMock.Object, commandContainer);
 
-        await commandHandler.Handle(
-            new DiscordMessage(
-                "!uptime",
-                "",
-                new User("", false),
-                0), CancellationToken.None);
+        await commandHandler.Handle(MessageObjectMother.CreateDiscordMessageWithContent(uptime.Name), CancellationToken.None);
 
         _botMock.Verify(x => x.SendMessageAsync(It.Is<DiscordMessage>(x => x.Content == "Streamer isn't live.")));
     }
@@ -174,18 +121,10 @@ public class CommandHandlerTests
             Name = "!command"
         };
 
-        var commandContainer = new Lazy<CommandContainer>(new CommandContainer(Enumerable.Empty<Command>()));
-
-        commandContainer.Value.Commands.Add(command);
-
+        var commandContainer = CommandContainerObjectMother.CreateLazy(command);
         var commandHandler = new CommandHandler<DiscordMessage>(_logger, _botMock.Object, commandContainer);
 
-        await commandHandler.Handle(
-            new DiscordMessage(
-                "!command",
-                "",
-                new User("", false),
-                0), CancellationToken.None);
+        await commandHandler.Handle(MessageObjectMother.CreateDiscordMessageWithContent(command.Name), CancellationToken.None);
 
         _botMock.Verify(x => x.SendMessageAsync(It.IsAny<DiscordMessage>()), Times.Never);
     }
