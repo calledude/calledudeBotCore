@@ -6,18 +6,18 @@ using System.Threading.Tasks;
 
 namespace calledudeBot.Chat.Commands;
 
-internal class StatsCommand : SpecialCommand<CommandParameter>
+public class StatsCommand : SpecialCommand<CommandParameter>
 {
     private readonly IUserSessionService _userSessionService;
     private readonly IUserActivityService _userActivityService;
 
-    public StatsCommand(IUserSessionService userSessionRepository, IUserActivityService userActivityService)
+    public StatsCommand(IUserSessionService userSessionService, IUserActivityService userActivityService)
     {
         Name = "!stats";
         Description = "Gives information about a twitch user";
         RequiresMod = false;
 
-        _userSessionService = userSessionRepository;
+        _userSessionService = userSessionService;
         _userActivityService = userActivityService;
     }
 
@@ -27,7 +27,7 @@ internal class StatsCommand : SpecialCommand<CommandParameter>
         var userActivity = await _userActivityService.GetUserActivity(user);
 
         if (userActivity is null)
-            return $"User {user} has no recorded activity";
+            return $"User {user} has no recorded activity.";
 
         var userSessions = await _userSessionService.GetUserSessions(user);
         var totalWatchTime = userSessions.Aggregate(TimeSpan.Zero, (curr, b) => curr + b.WatchTime, x => x);

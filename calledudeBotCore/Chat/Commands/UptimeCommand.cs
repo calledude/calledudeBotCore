@@ -26,6 +26,10 @@ public sealed class UptimeCommand : SpecialCommand
             return Task.FromResult("Streamer isn't live.");
 
         var timeSinceLive = DateTime.Now - wentLiveAt;
+
+        if (timeSinceLive.TotalSeconds < 5)
+            return Task.FromResult("The stream has just started.");
+
         var sb = new StringBuilder();
 
         sb.Append("Stream uptime: ");
@@ -39,13 +43,10 @@ public sealed class UptimeCommand : SpecialCommand
         if (timeSinceLive.Seconds > 0)
             sb.Append(timeSinceLive.Seconds).Append('s');
 
-        return Task.FromResult(sb.ToString());
+        return Task.FromResult(sb.ToString().TrimEnd());
     }
 
-    private DateTime WentLiveAt()
-    {
-        return _streamMonitor.IsStreaming
+    private DateTime WentLiveAt() => _streamMonitor.IsStreaming
             ? _streamMonitor.StreamStarted
             : default;
-    }
 }
