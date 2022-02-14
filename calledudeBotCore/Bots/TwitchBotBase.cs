@@ -46,7 +46,7 @@ public abstract class TwitchBotBase : IMessageBot<IrcMessage>
         _ = Task.Run(async () =>
         {
             await IrcClient.Setup();
-            await IrcClient.Start();
+            await IrcClient.Start(cancellationToken);
         }, cancellationToken);
 
         return Task.CompletedTask;

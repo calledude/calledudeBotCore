@@ -22,6 +22,7 @@ public class SteamBot : Bot<IrcMessage>
     private readonly SteamFriends _steamFriends;
     private readonly ILogger<SteamBot> _logger;
     private readonly IMessageDispatcher _messageDispatcher;
+    private CancellationToken _hostCancellationToken;
     private CancellationTokenSource? _cts;
 
     public override string Name => "Steam";
@@ -55,15 +56,17 @@ public class SteamBot : Bot<IrcMessage>
 
     public override Task StartAsync(CancellationToken cancellationToken)
     {
+        _hostCancellationToken = cancellationToken;
         _cts = new CancellationTokenSource();
+        var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_hostCancellationToken, _cts.Token);
         _steamClient.Connect();
         return Task.Factory.StartNew(() =>
         {
-            while (!_cts.IsCancellationRequested)
+            while (!linkedTokenSource.IsCancellationRequested)
             {
-                _manager.RunWaitCallbacks();
+                _manager.RunWaitCallbacks(TimeSpan.FromSeconds(2));
             }
-        }, _cts.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        }, linkedTokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
     }
 
     private async void OnChatMessage(SteamFriends.FriendMsgCallback callback)
@@ -104,7 +107,7 @@ public class SteamBot : Bot<IrcMessage>
         _cts!.Cancel();
         _logger.LogWarning("Disconnected. Re-establishing connection..");
         _cts.Dispose();
-        await StartAsync(CancellationToken.None);
+        await StartAsync(_hostCancellationToken);
     }
 
     protected override Task SendMessage(IrcMessage message)

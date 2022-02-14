@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace calledudeBot.Bots.Network;
@@ -11,7 +12,7 @@ public interface ITcpClient : IDisposable
     string? Server { get; set; }
     int Port { get; set; }
     bool Connected { get; }
-    Task<string?> ReadLineAsync();
+    Task<string?> ReadLineAsync(CancellationToken cancellationToken);
     Task WriteLineAsync(string value);
 
     void Close();
@@ -78,12 +79,12 @@ public sealed class TcpClientAdapter : ITcpClient
         InputStream = new StreamReader(_tcpClient.GetStream());
     }
 
-    public async Task<string?> ReadLineAsync()
+    public async Task<string?> ReadLineAsync(CancellationToken cancellationToken)
     {
         if (InputStream is null)
             return null;
 
-        return await InputStream.ReadLineAsync();
+        return await InputStream.ReadLineAsync().WaitAsync(cancellationToken);
     }
 
     public async Task WriteLineAsync(string value)

@@ -4,6 +4,8 @@ using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace calledudeBot.Bots.Network;
@@ -25,7 +27,7 @@ public interface IIrcClient : IDisposable
     Task Logout();
     Task SendMessage(IrcMessage message);
     Task Setup();
-    Task Start();
+    Task Start(CancellationToken cancellationToken);
     Task WriteLine(string message);
 }
 
@@ -62,18 +64,25 @@ public sealed class IrcClient : IIrcClient
 
     public async Task Setup() => await _tcpClient.Setup();
 
-    public async Task Start()
+    public async Task Start(CancellationToken cancellationToken)
     {
-        try
+        while (!cancellationToken.IsCancellationRequested)
         {
-            await TryLogin();
-            await Listen();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An error occured.");
-            await _tcpClient.Reconnect(); //Since basically any exception will break the fuck out of the bot, reconnect
-            await Start();
+            try
+            {
+                await TryLogin();
+                await Listen(cancellationToken);
+            }
+            catch (TaskCanceledException)
+            {
+                _logger.LogInformation("Shutting down.");
+                return;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occured.");
+                await _tcpClient.Reconnect(); //Since basically any exception will break the fuck out of the bot, reconnect
+            }
         }
     }
 
@@ -135,11 +144,11 @@ public sealed class IrcClient : IIrcClient
         return MessageFilters.Any(x => buffer.Contains(x));
     }
 
-    private async IAsyncEnumerable<(string?, string[]?)> MessageLoop(Func<bool> loopCondition)
+    private async IAsyncEnumerable<(string?, string[]?)> MessageLoop(Func<bool> loopCondition, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         while (loopCondition())
         {
-            var buffer = await _tcpClient.ReadLineAsync();
+            var buffer = await _tcpClient.ReadLineAsync(cancellationToken);
 
             if (!ShouldFilterMessageFromLogging(buffer))
             {
@@ -181,10 +190,10 @@ public sealed class IrcClient : IIrcClient
         }
     }
 
-    private async Task Listen()
+    private async Task Listen(CancellationToken cancellationToken)
     {
         _logger.LogDebug("Starting message loop listener");
-        await foreach ((var buffer, var splitBuffer) in MessageLoop(() => true))
+        await foreach ((var buffer, var splitBuffer) in MessageLoop(() => !cancellationToken.IsCancellationRequested, cancellationToken))
         {
             if (buffer is null || splitBuffer is null)
                 continue;

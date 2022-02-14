@@ -23,7 +23,7 @@ public static class Program
         var host = CreateHostBuilder().Build();
 
         var services = host.Services;
-        await host.Services
+        await services
             .GetRequiredService<DatabaseContext>()
             .Database.MigrateAsync();
 

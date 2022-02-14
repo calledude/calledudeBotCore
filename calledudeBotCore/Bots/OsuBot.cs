@@ -47,7 +47,7 @@ public sealed class OsuBot : IOsuBot
         _ = Task.Run(async () =>
         {
             await _ircClient.Setup();
-            await _ircClient.Start();
+            await _ircClient.Start(cancellationToken);
         }, cancellationToken);
 
         return Task.CompletedTask;
