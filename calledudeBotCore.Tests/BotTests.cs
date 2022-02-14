@@ -4,6 +4,7 @@ using calledudeBot.Chat;
 using calledudeBot.Chat.Commands;
 using calledudeBot.Chat.Info;
 using calledudeBot.Config;
+using calledudeBot.Models;
 using calledudeBot.Services;
 using calledudeBotCore.Tests.ObjectMothers;
 using MediatR;
@@ -114,5 +115,48 @@ public class BotTests
         Assert.True(modSuccessfullyRead);
     }
 
+    [Fact]
+    public async Task BroadcasterIsMod()
+    {
+        IrcMessage message = null;
+        var ircClient = new Mock<IIrcClient>();
+        var messageDispatcher = new Mock<IMessageDispatcher>();
+        messageDispatcher
+            .Setup(x => x.PublishAsync(It.IsAny<IrcMessage>()))
+            .Callback((INotification notification) =>
+            {
+                message = (IrcMessage)notification;
+            });
+
+        var twitch = new TwitchBot(ircClient.Object, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher.Object, _twitchLogger);
+        await twitch.HandleRawMessage(":tmi.twitch.tv NOTICE #calledude :The moderators of this channel are: BogusUser");
+        await twitch.HandleMessage("hello", "calledude");
+
+        var mods = await twitch.GetMods();
+        Assert.DoesNotContain(mods, x => x == "calledude");
+        Assert.True(await message.Sender.IsModerator());
+    }
+
+    [Fact]
+    public async Task OnReady_RegistersCapabilities_AndReadyNotification()
+    {
+        var ircClient = new Mock<IIrcClient>();
+        var messageDispatcher = new Mock<IMessageDispatcher>();
+
+        ReadyNotification readyNotification = null;
+        messageDispatcher
+            .Setup(x => x.PublishAsync(It.IsAny<ReadyNotification>()))
+            .Callback((INotification notification) => readyNotification = (ReadyNotification)notification);
+
+        var twitch = new TwitchBot(ircClient.Object, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher.Object, null);
+        await twitch.OnReady();
+
+        messageDispatcher.Verify(x => x.PublishAsync(It.IsAny<ReadyNotification>()), Times.Once);
+        messageDispatcher.VerifyNoOtherCalls();
+
+        ircClient.Verify(x => x.WriteLine(It.Is<string>(y => y == "CAP REQ :twitch.tv/commands")), Times.Once);
+        ircClient.Verify(x => x.WriteLine(It.Is<string>(y => y == "CAP REQ :twitch.tv/membership")), Times.Once);
+
+        Assert.Equal(twitch, readyNotification.Bot);
     }
 }
