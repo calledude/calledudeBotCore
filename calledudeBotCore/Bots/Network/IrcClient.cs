@@ -23,6 +23,8 @@ public interface IIrcClient : IDisposable
     event Func<string, string, Task>? MessageReceived;
     event Func<Task>? Ready;
     event Func<string, Task>? UnhandledMessage;
+    event Func<string, Task>? ChatUserJoined;
+    event Func<string, Task>? ChatUserLeft;
 
     Task Logout();
     Task SendMessage(IrcMessage message);
@@ -49,6 +51,8 @@ public sealed class IrcClient : IIrcClient
     public event Func<Task>? Ready;
     public event Func<string, string, Task>? MessageReceived;
     public event Func<string, Task>? UnhandledMessage;
+    public event Func<string, Task>? ChatUserJoined;
+    public event Func<string, Task>? ChatUserLeft;
 
     private readonly ILogger<IrcClient> _logger;
     private readonly ITcpClient _tcpClient;
@@ -207,10 +211,20 @@ public sealed class IrcClient : IIrcClient
                 if (MessageReceived is null)
                     continue;
 
-                var parsedMessage = IrcMessage.ParseMessage(splitBuffer);
-                var parsedUser = IrcMessage.ParseUser(buffer);
+                var messageContent = IrcMessage.ParseMessage(splitBuffer);
+                var user = IrcMessage.ParseUser(buffer);
 
-                _ = MessageReceived(parsedMessage, parsedUser);
+                _ = MessageReceived(messageContent, user);
+            }
+            else if (splitBuffer[1] == "JOIN")
+            {
+                var user = IrcMessage.ParseUser(buffer);
+                _ = ChatUserJoined?.Invoke(user);
+            }
+            else if (splitBuffer[1] == "PART")
+            {
+                var user = IrcMessage.ParseUser(buffer);
+                _ = ChatUserLeft?.Invoke(user);
             }
             else
             {

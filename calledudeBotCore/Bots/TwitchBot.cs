@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
@@ -18,9 +17,9 @@ public sealed class TwitchBot : TwitchBotBase
     private HashSet<string>? _mods;
     private DateTime _lastModCheck;
     private readonly IMessageDispatcher _dispatcher;
-    private readonly Regex _joinRegex;
     private readonly ILogger<TwitchBot> _logger;
     private readonly Channel<string[]> _modsChan;
+    private readonly string _moderatorMessage;
 
     public override string Name => "TwitchBot";
 
@@ -34,10 +33,13 @@ public sealed class TwitchBot : TwitchBotBase
         IrcClient.Ready += OnReady;
         IrcClient.MessageReceived += HandleMessage;
         IrcClient.UnhandledMessage += HandleRawMessage;
+        IrcClient.ChatUserJoined += OnChatUserJoin;
+        IrcClient.ChatUserLeft += OnChatUserLeave;
 
         _dispatcher = dispatcher;
         _modsChan = Channel.CreateBounded<string[]>(1);
-        _joinRegex = new Regex(@":(?<User>\w+)!\k<User>@\k<User>\.tmi\.twitch\.tv (?<ParticipationType>JOIN|PART).+", RegexOptions.Compiled);
+
+        _moderatorMessage = $":tmi.twitch.tv NOTICE {ChannelName} :The moderators of this channel are:";
     }
 
     public async Task OnReady()
@@ -73,30 +75,25 @@ public sealed class TwitchBot : TwitchBotBase
     public async Task HandleRawMessage(string buffer)
     {
         // :tmi.twitch.tv NOTICE #calledude :The moderators of this channel are: CALLEDUDE, calLEDuDeBoT
-        var moderatorMessage = $":tmi.twitch.tv NOTICE {ChannelName} :The moderators of this channel are:";
-        if (buffer.StartsWith(moderatorMessage))
-        {
-            var modsIndex = moderatorMessage.Length;
-            var modsArr = buffer[modsIndex..].Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-            await _modsChan.Writer.WriteAsync(modsArr);
-
+        if (!buffer.StartsWith(_moderatorMessage))
             return;
-        }
 
-        var match = _joinRegex.Match(buffer);
-        if (match.Success)
-        {
-            var (logUserAction, participationType) = match.Groups["ParticipationType"].Value == "JOIN"
-                ? ("joined", ParticipationType.Join)
-                : ("left", ParticipationType.Leave);
+        var modsIndex = _moderatorMessage.Length;
+        var modsArr = buffer[modsIndex..].Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-            _logger.LogInformation("User: {userName} {userAction} the chat.", match.Groups["User"].Value, logUserAction);
+        await _modsChan.Writer.WriteAsync(modsArr);
+    }
 
-            await _dispatcher.PublishAsync(
-                    new UserParticipationNotification(
-                        new User(match.Groups["User"].Value), participationType));
-        }
+    private async Task OnChatUserLeave(string user)
+        => await HandleUserParticipation(user, ParticipationType.Leave, "left");
+
+    private async Task OnChatUserJoin(string user)
+        => await HandleUserParticipation(user, ParticipationType.Join, "joined");
+
+    public async Task HandleUserParticipation(string user, ParticipationType participationType, string logUserAction)
+    {
+        _logger.LogInformation("User: {userName} {userAction} the chat.", user, logUserAction);
+        await _dispatcher.PublishAsync(new UserParticipationNotification(new User(user), participationType));
     }
 
     public async Task<HashSet<string>> GetMods()
@@ -108,9 +105,7 @@ public sealed class TwitchBot : TwitchBotBase
         _lastModCheck = DateTime.Now;
 
         await IrcClient.WriteLine($"PRIVMSG {ChannelName} /mods");
-
         var modsArr = await _modsChan.Reader.ReadAsync();
-
         _mods = modsArr.ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         _logger.LogInformation("Fetched moderators: {moderators}", _mods);
