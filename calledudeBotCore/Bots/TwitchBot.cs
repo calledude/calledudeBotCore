@@ -64,7 +64,7 @@ public sealed class TwitchBot : TwitchBotBase
             return true;
 
         var mods = await GetMods();
-        return mods?.Contains(user) ?? false;
+        return mods.Contains(user);
     }
 
     private bool IsBroadcaster(string user)
@@ -99,7 +99,7 @@ public sealed class TwitchBot : TwitchBotBase
         }
     }
 
-    public async Task<HashSet<string>?> GetMods()
+    public async Task<HashSet<string>> GetMods()
     {
         if (DateTime.Now <= _lastModCheck.AddMinutes(1))
             return _mods!;

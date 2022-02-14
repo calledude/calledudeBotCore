@@ -29,7 +29,7 @@ public class BotTests
         var isModInvokeCount = 0;
 
         var fakeCommands = Enumerable
-            .Range(1, 10)
+            .Range(1, 5)
             .Select(x =>
             {
                 var cmdMock = new Mock<SpecialCommand<CommandParameter>>();
@@ -74,7 +74,7 @@ public class BotTests
     public async Task Mods_Are_Case_Insensitive()
     {
         var ircClient = new IrcClient(_ircClientLogger, new Mock<ITcpClient>().Object);
-        var twitch = new TwitchBot(ircClient, new TwitchBotConfig() { TwitchChannel = "#calledude" }, new Mock<IMessageDispatcher>().Object, _twitchLogger);
+        var twitch = new TwitchBot(ircClient, new TwitchBotConfig { TwitchChannel = "#calledude" }, new Mock<IMessageDispatcher>().Object, _twitchLogger);
         await twitch.HandleRawMessage(":tmi.twitch.tv NOTICE #calledude :The moderators of this channel are: CALLEDUDE, calLEDuDeBoT");
         var mods = await twitch.GetMods();
 
@@ -86,40 +86,33 @@ public class BotTests
     [Fact]
     public async Task CanHandleMultipleMessagesSimultaneously()
     {
-        var lastLineRead = false;
         var tcpClient = new Mock<ITcpClient>();
         tcpClient
-            .SetupSequence(x => x.ReadLineAsync())
+            .SetupSequence(x => x.ReadLineAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync("this 366 is a success code")
             .ReturnsAsync(":someUser!someUser@someUser.tmi.twitch.tv PRIVMSG #calledude :!test")
-            .ReturnsAsync(() =>
-            {
-                lastLineRead = true;
-                return ":tmi.twitch.tv NOTICE #calledude :The moderators of this channel are: someUser";
-            });
+            .ReturnsAsync(":tmi.twitch.tv NOTICE #calledude :The moderators of this channel are: someUser");
 
         var ircClient = new IrcClient(_ircClientLogger, tcpClient.Object);
 
         var messageDispatcher = new Mock<IMessageDispatcher>();
-        var twitch = new TwitchBot(ircClient, new TwitchBotConfig() { TwitchChannel = "#calledude" }, messageDispatcher.Object, _twitchLogger);
+        var twitch = new TwitchBot(ircClient, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher.Object, _twitchLogger);
 
-        var isModCalled = false;
+        var isModeratorChecked = new ManualResetEventSlim(false);
+
         messageDispatcher.Setup(x => x.PublishAsync(It.IsAny<IrcMessage>()))
             .Returns(async (INotification notification) =>
             {
                 var message = (IrcMessage)notification;
                 await message.Sender.IsModerator();
-                isModCalled = true;
+                isModeratorChecked.Set();
             });
 
         await twitch.StartAsync(CancellationToken.None);
 
-        for (var tries = 0; tries < 5 && !isModCalled && !lastLineRead; tries++)
-        {
-            await Task.Delay(50);
-        }
+        var modSuccessfullyRead = isModeratorChecked.Wait(500);
+        Assert.True(modSuccessfullyRead);
+    }
 
-        Assert.True(lastLineRead);
-        Assert.True(isModCalled);
     }
 }

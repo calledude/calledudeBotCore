@@ -48,7 +48,7 @@ public sealed class RelayHandler : INotificationHandler<RelayNotification<IrcMes
     }
 
     private bool MessageSenderIsBroadcaster(IrcMessage message)
-        => _streamerNick.Equals(message.Sender?.Name, StringComparison.OrdinalIgnoreCase);
+        => _streamerNick.Equals(message.Sender.Name, StringComparison.OrdinalIgnoreCase);
 
     private async Task TryRelay(RelayNotification<IrcMessage> notification)
     {
