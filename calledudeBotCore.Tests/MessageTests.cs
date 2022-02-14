@@ -23,7 +23,7 @@ public class MessageTests
 
         var parsedUser = IrcMessage.ParseUser(message);
 
-        Assert.Equal("Calledude", parsedUser);
+        Assert.Equal("calledude", parsedUser);
     }
 
     [Fact]

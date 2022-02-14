@@ -25,3 +25,9 @@ public sealed class User
     public async Task<bool> IsModerator()
         => await _isModerator;
 }
+
+public static class UserExtensions
+{
+    public static string CapitalizeUsername(this User user)
+    => char.ToUpper(user.Name[0]) + user.Name[1..];
+}

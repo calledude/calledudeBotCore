@@ -12,10 +12,7 @@ public sealed class IrcMessage : Message<IrcMessage>
 
     //:calledude!calledude@calledude.tmi.twitch.tv PRIVMSG #calledude :test
     public static string ParseUser(string buffer)
-    {
-        var name = buffer[1..buffer.IndexOf('!')];
-        return char.ToUpper(name[0]) + name[1..]; //capitalize first letter in username
-    }
+        => buffer[1..buffer.IndexOf('!')];
 
     public override IrcMessage CloneWithMessage(string message)
         => new(message, Channel!, Sender!);
