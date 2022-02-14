@@ -137,6 +137,29 @@ public class BotTests
         Assert.True(await message.Sender.IsModerator());
     }
 
+    [Theory]
+    [InlineData(ParticipationType.Join)]
+    [InlineData(ParticipationType.Leave)]
+    public async Task UserParticipationEventIsRaised(ParticipationType participationType)
+    {
+        var ircClient = new Mock<IIrcClient>();
+        var messageDispatcher = new Mock<IMessageDispatcher>();
+
+        UserParticipationNotification userParticipation = null;
+        messageDispatcher
+            .Setup(x => x.PublishAsync(It.IsAny<UserParticipationNotification>()))
+            .Callback((INotification notification) => userParticipation = (UserParticipationNotification)notification);
+
+        var twitch = new TwitchBot(ircClient.Object, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher.Object, _twitchLogger);
+        await twitch.HandleUserParticipation("calledude", participationType, "");
+
+        messageDispatcher.Verify(x => x.PublishAsync(It.IsAny<UserParticipationNotification>()), Times.Once);
+        messageDispatcher.VerifyNoOtherCalls();
+
+        Assert.Equal(participationType, userParticipation.ParticipationType);
+        Assert.Equal("calledude", userParticipation.User.Name);
+    }
+
     [Fact]
     public async Task OnReady_RegistersCapabilities_AndReadyNotification()
     {
