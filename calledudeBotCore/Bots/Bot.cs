@@ -37,7 +37,7 @@ public abstract class Bot<T> : IMessageBot<T> where T : IMessage
 
     public async Task SendMessageAsync(T message)
     {
-        _logger.LogInformation("Sending message: {0}", message.Content);
+        _logger.LogInformation("Sending message: '{content}'", message.Content);
         await SendMessage(message);
     }
 }
