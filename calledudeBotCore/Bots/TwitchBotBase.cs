@@ -18,6 +18,8 @@ public abstract class TwitchBotBase : IMessageBot<IrcMessage>
     protected string ChannelName { get; }
     protected string Broadcaster { get; }
 
+    protected CancellationToken CancellationToken { get; private set; }
+
     protected TwitchBotBase(IIrcClient ircClient, ITwitchConfig config)
     {
         ChannelName = config.TwitchChannel!;
@@ -43,6 +45,8 @@ public abstract class TwitchBotBase : IMessageBot<IrcMessage>
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        CancellationToken = cancellationToken;
+
         _ = Task.Run(async () =>
         {
             await IrcClient.Setup();

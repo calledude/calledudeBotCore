@@ -101,8 +101,9 @@ public class BotTests
 
         var isModeratorChecked = new ManualResetEventSlim(false);
 
-        messageDispatcher.Setup(x => x.PublishAsync(It.IsAny<IrcMessage>()))
-            .Returns(async (INotification notification) =>
+        messageDispatcher
+            .Setup(x => x.PublishAsync(It.IsAny<IrcMessage>(), It.IsAny<CancellationToken>()))
+            .Returns(async (INotification notification, CancellationToken _) =>
             {
                 var message = (IrcMessage)notification;
                 await message.Sender.IsModerator();
@@ -122,11 +123,8 @@ public class BotTests
         var ircClient = new Mock<IIrcClient>();
         var messageDispatcher = new Mock<IMessageDispatcher>();
         messageDispatcher
-            .Setup(x => x.PublishAsync(It.IsAny<IrcMessage>()))
-            .Callback((INotification notification) =>
-            {
-                message = (IrcMessage)notification;
-            });
+            .Setup(x => x.PublishAsync(It.IsAny<IrcMessage>(), It.IsAny<CancellationToken>()))
+            .Callback((INotification notification, CancellationToken _) => message = (IrcMessage)notification);
 
         var twitch = new TwitchBot(ircClient.Object, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher.Object, _twitchLogger);
         await twitch.HandleRawMessage(":tmi.twitch.tv NOTICE #calledude :The moderators of this channel are: BogusUser");
@@ -147,13 +145,13 @@ public class BotTests
 
         UserParticipationNotification userParticipation = null;
         messageDispatcher
-            .Setup(x => x.PublishAsync(It.IsAny<UserParticipationNotification>()))
-            .Callback((INotification notification) => userParticipation = (UserParticipationNotification)notification);
+            .Setup(x => x.PublishAsync(It.IsAny<UserParticipationNotification>(), It.IsAny<CancellationToken>()))
+            .Callback((INotification notification, CancellationToken _) => userParticipation = (UserParticipationNotification)notification);
 
         var twitch = new TwitchBot(ircClient.Object, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher.Object, _twitchLogger);
         await twitch.HandleUserParticipation("calledude", participationType, "");
 
-        messageDispatcher.Verify(x => x.PublishAsync(It.IsAny<UserParticipationNotification>()), Times.Once);
+        messageDispatcher.Verify(x => x.PublishAsync(It.IsAny<UserParticipationNotification>(), It.IsAny<CancellationToken>()), Times.Once);
         messageDispatcher.VerifyNoOtherCalls();
 
         Assert.Equal(participationType, userParticipation.ParticipationType);
@@ -168,13 +166,13 @@ public class BotTests
 
         ReadyNotification readyNotification = null;
         messageDispatcher
-            .Setup(x => x.PublishAsync(It.IsAny<ReadyNotification>()))
-            .Callback((INotification notification) => readyNotification = (ReadyNotification)notification);
+            .Setup(x => x.PublishAsync(It.IsAny<ReadyNotification>(), It.IsAny<CancellationToken>()))
+            .Callback((INotification notification, CancellationToken _) => readyNotification = (ReadyNotification)notification);
 
         var twitch = new TwitchBot(ircClient.Object, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher.Object, null);
         await twitch.OnReady();
 
-        messageDispatcher.Verify(x => x.PublishAsync(It.IsAny<ReadyNotification>()), Times.Once);
+        messageDispatcher.Verify(x => x.PublishAsync(It.IsAny<ReadyNotification>(), It.IsAny<CancellationToken>()), Times.Once);
         messageDispatcher.VerifyNoOtherCalls();
 
         ircClient.Verify(x => x.WriteLine(It.Is<string>(y => y == "CAP REQ :twitch.tv/commands")), Times.Once);

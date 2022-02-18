@@ -2,6 +2,7 @@
 using calledudeBot.Chat;
 using calledudeBot.Config;
 using calledudeBot.Models;
+using calledudeBot.Utilities;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -21,7 +22,7 @@ public interface IOsuUserService : INotificationHandler<ReadyNotification>, IDis
 public sealed class OsuUserService : IOsuUserService
 {
     private OsuUser? _oldOsuData;
-    private readonly Timer _checkTimer;
+    private readonly IAsyncTimer _checkTimer;
     private readonly IHttpClientWrapper _client;
     private readonly IMessageBot<IrcMessage> _twitch;
     private readonly ILogger<OsuUserService> _logger;
@@ -32,7 +33,8 @@ public sealed class OsuUserService : IOsuUserService
         IHttpClientWrapper client,
         IOptions<BotConfig> options,
         IMessageBot<IrcMessage> twitchBot,
-        ILogger<OsuUserService> logger)
+        ILogger<OsuUserService> logger,
+        IAsyncTimer timer)
     {
         var config = options.Value ?? throw new ArgumentNullException(nameof(options));
         _osuAPIToken = config.OsuAPIToken ?? throw new ArgumentNullException("config.OsuAPIToken");
@@ -41,7 +43,8 @@ public sealed class OsuUserService : IOsuUserService
         _client = client;
         _twitch = twitchBot;
         _logger = logger;
-        _checkTimer = new Timer(CheckUserUpdate, null, Timeout.Infinite, Timeout.Infinite);
+        _checkTimer = timer;
+        _checkTimer.Elapsed += CheckUserUpdate;
     }
 
     public Task Handle(ReadyNotification notification, CancellationToken cancellationToken)
@@ -49,7 +52,8 @@ public sealed class OsuUserService : IOsuUserService
         if (notification.Bot is not TwitchBot)
             return Task.CompletedTask;
 
-        _checkTimer.Change(0, 15000);
+        _checkTimer.Interval = 15000;
+        _checkTimer.Start(cancellationToken);
         return Task.CompletedTask;
     }
 
@@ -69,8 +73,11 @@ public sealed class OsuUserService : IOsuUserService
     public async Task<OsuUser?> GetOsuUser(string username)
         => await GetOsuUserInternal(username);
 
-    private async void CheckUserUpdate(object? state)
+    private async Task CheckUserUpdate(CancellationToken cancellationToken)
     {
+        if (cancellationToken.IsCancellationRequested)
+            return;
+
         var newUserState = await GetOsuUserInternal();
         if (newUserState == default)
         {
@@ -93,7 +100,7 @@ public sealed class OsuUserService : IOsuUserService
             var formatted = string.Format(CultureInfo.InvariantCulture, "{0:0.00}", Math.Abs(ppDiff));
             var totalPP = user.PP.ToString(CultureInfo.InvariantCulture);
 
-            var rankMessage = $"{Math.Abs(rankDiff)} ranks (#{user.Rank}). ";
+            var rankMessage = $"{Math.Abs(rankDiff)} ranks (#{user.Rank}).";
             var ppMessage = $"PP: {(ppDiff < 0 ? "-" : "+")}{formatted}pp ({totalPP}pp)";
 
             var newRankMessage = new IrcMessage($"{user.Username} just {(rankDiff < 0 ? "gained" : "lost")} {rankMessage} {ppMessage}", "", new User(""));
@@ -105,5 +112,9 @@ public sealed class OsuUserService : IOsuUserService
     }
 
     public void Dispose()
-        => _twitch.Dispose();
+    {
+        _checkTimer.Elapsed -= CheckUserUpdate;
+        _checkTimer.Dispose();
+        _twitch.Dispose();
+    }
 }

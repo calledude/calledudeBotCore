@@ -1,6 +1,7 @@
 ﻿using calledudeBot.Bots;
 using calledudeBot.Config;
 using calledudeBot.Models;
+using calledudeBot.Utilities;
 using Discord;
 using Discord.WebSocket;
 using MediatR;
@@ -14,7 +15,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
 
 namespace calledudeBot.Services;
 
@@ -31,9 +31,9 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
 {
     private IGuildUser? _streamer;
     private ITextChannel? _announceChannel;
-
+    private CancellationToken _cancellationToken;
     private readonly OBSWebsocket _obs;
-    private readonly System.Timers.Timer _streamStatusTimer;
+    private readonly IAsyncTimer _streamStatusTimer;
     private readonly SemaphoreSlim _exitSem;
     private readonly ILogger<StreamMonitor> _logger;
     private readonly DiscordSocketClient _client;
@@ -45,7 +45,7 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
     public bool IsStreaming { get; private set; }
     public DateTime StreamStarted { get; private set; }
 
-    public StreamMonitor(ILogger<StreamMonitor> logger, IOptions<BotConfig> options, DiscordSocketClient client)
+    public StreamMonitor(ILogger<StreamMonitor> logger, IOptions<BotConfig> options, DiscordSocketClient client, IAsyncTimer timer)
     {
         var config = options?.Value ?? throw new ArgumentNullException(nameof(options));
 
@@ -64,7 +64,8 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
         _obs.Disconnected += OnObsExit;
         _obs.Connected += OnConnected;
 
-        _streamStatusTimer = new System.Timers.Timer(2000);
+        _streamStatusTimer = timer;
+        _streamStatusTimer.Interval = 2000;
         _streamStatusTimer.Elapsed += CheckDiscordStatus;
 
         _announceChannelID = config.AnnounceChannelId;
@@ -77,6 +78,7 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
     {
         if (notification.Bot is DiscordBot)
         {
+            _cancellationToken = cancellationToken;
             _ = Connect();
         }
 
@@ -114,7 +116,7 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
         if (state == OutputState.Started)
         {
             _logger.LogInformation("OBS has gone live. Checking discord status for user {discordUserName}#{discriminator}..", _streamer!.Username, _streamer.Discriminator);
-            _streamStatusTimer.Start();
+            _streamStatusTimer.Start(_cancellationToken);
         }
         else if (state == OutputState.Stopped)
         {
@@ -151,7 +153,7 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
         }
     }
 
-    private async void CheckDiscordStatus(object? sender, ElapsedEventArgs e)
+    private async Task CheckDiscordStatus(CancellationToken cancellationToken)
     {
         if (_streamer?.Activities.FirstOrDefault(x => x is StreamingGame) is not StreamingGame activity)
             return;
@@ -218,7 +220,7 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
         if (status.Streaming)
         {
             StreamStarted = DateTime.Now - status.TotalStreamTime;
-            _streamStatusTimer.Start();
+            _streamStatusTimer.Start(_cancellationToken);
         }
     }
 

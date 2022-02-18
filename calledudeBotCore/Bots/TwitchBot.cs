@@ -46,7 +46,7 @@ public sealed class TwitchBot : TwitchBotBase
     {
         await IrcClient.WriteLine("CAP REQ :twitch.tv/commands");
         await IrcClient.WriteLine("CAP REQ :twitch.tv/membership");
-        await _dispatcher.PublishAsync(new ReadyNotification(this));
+        await _dispatcher.PublishAsync(new ReadyNotification(this), CancellationToken);
     }
 
     public async Task HandleMessage(string message, string user)

@@ -7,6 +7,7 @@ using calledudeBot.Database.UserActivity;
 using calledudeBot.Database.UserSession;
 using calledudeBot.Models;
 using calledudeBot.Services;
+using calledudeBot.Utilities;
 using Discord;
 using Discord.WebSocket;
 using MediatR;
@@ -39,7 +40,8 @@ public static class ServiceCollectionExtensions
             .AddTransient<IUserSessionService, UserSessionService>()
             .AddTransient<IIrcClient, IrcClient>()
             .AddTransient<IOsuUserService, OsuUserService>()
-            .AddTransient<IHttpClientWrapper, HttpClientWrapper>();
+            .AddTransient<IHttpClientWrapper, HttpClientWrapper>()
+            .AddTransient<IAsyncTimer, AsyncTimer>();
 
     public static IServiceCollection AddBots(this IServiceCollection services)
         => services

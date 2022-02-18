@@ -1,13 +1,14 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace calledudeBot.Services;
 
 public interface IMessageDispatcher
 {
-    Task PublishAsync(INotification notification);
+    Task PublishAsync(INotification notification, CancellationToken cancellationToken = default);
 }
 
 public class MessageDispatcher : IMessageDispatcher
@@ -21,14 +22,14 @@ public class MessageDispatcher : IMessageDispatcher
         _mediator = mediator;
     }
 
-    public async Task PublishAsync(INotification notification)
+    public async Task PublishAsync(INotification notification, CancellationToken cancellationToken = default)
     {
         var notificationType = notification.GetType().Name;
         _logger.LogInformation("Beginning to publish a {notificationType} message", notificationType);
 
         try
         {
-            await _mediator.Publish(notification);
+            await _mediator.Publish(notification, cancellationToken);
         }
         catch (Exception ex)
         {

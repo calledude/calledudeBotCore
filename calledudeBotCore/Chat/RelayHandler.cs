@@ -17,14 +17,14 @@ public sealed class RelayHandler : INotificationHandler<RelayNotification<IrcMes
     private readonly ILogger<RelayHandler> _logger;
     private readonly ITwitchUser _twitch;
     private readonly SteamBot _steam;
-    private readonly OsuBot _osu;
+    private readonly IOsuBot _osu;
 
     public RelayHandler(
         ILogger<RelayHandler> logger,
         RelayState relayState,
         ITwitchUser twitch,
         SteamBot steam,
-        OsuBot osu,
+        IOsuBot osu,
         ITwitchUserConfig config)
     {
         _relayState = relayState;

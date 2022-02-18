@@ -36,8 +36,7 @@ public static class Program
     }
 
     private static IHostBuilder CreateHostBuilder()
-    {
-        return Host.CreateDefaultBuilder()
+        => Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
                 services
@@ -50,7 +49,7 @@ public static class Program
                     .AddHostedService(x => x.GetRequiredService<IMessageBot<DiscordMessage>>())
                     .AddHostedService(x => x.GetRequiredService<IMessageBot<IrcMessage>>())
                     .AddHostedService(x => x.GetRequiredService<ITwitchUser>())
-                    .AddHostedService(x => x.GetRequiredService<OsuBot>())
+                    .AddHostedService(x => x.GetRequiredService<IOsuBot>())
                     .AddHostedService(x => x.GetRequiredService<SteamBot>());
             })
             .ConfigureLogging((_, logging) =>
@@ -66,5 +65,4 @@ public static class Program
                 logging.AddSerilog(logger);
                 logging.SetMinimumLevel(LogLevel.Debug);
             });
-    }
 }

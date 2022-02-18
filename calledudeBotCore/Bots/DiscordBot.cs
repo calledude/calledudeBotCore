@@ -44,7 +44,7 @@ public sealed class DiscordBot : Bot<DiscordMessage>
     {
         _bot.Log += Log;
         _bot.MessageReceived += OnMessageReceived;
-        _bot.Ready += OnReady;
+        _bot.Ready += () => OnReady(cancellationToken);
 
         await _bot.LoginAsync(TokenType.Bot, _token);
         await _bot.StartAsync();
@@ -77,8 +77,8 @@ public sealed class DiscordBot : Bot<DiscordMessage>
         return Task.CompletedTask;
     }
 
-    private async Task OnReady()
-        => await _dispatcher.PublishAsync(new ReadyNotification(this));
+    private async Task OnReady(CancellationToken cancellationToken)
+        => await _dispatcher.PublishAsync(new ReadyNotification(this), cancellationToken);
 
     private async Task OnMessageReceived(SocketMessage messageParam)
     {
