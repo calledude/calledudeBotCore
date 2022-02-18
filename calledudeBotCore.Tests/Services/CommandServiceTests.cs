@@ -30,35 +30,29 @@ public class CommandServiceTests
     [Fact]
     public async Task Invalid_Command_Error_Response()
     {
-        var botMock = new Mock<IMessageBot<DiscordMessage>>();
-        botMock.Setup(x => x.SendMessageAsync(It.IsAny<DiscordMessage>())).Verifiable();
-
         var commandContainer = CommandContainerObjectMother.CreateLazy();
         var logger = new Logger<CommandService<DiscordMessage>>(NullLoggerFactory.Instance);
 
-        var commandService = new CommandService<DiscordMessage>(logger, botMock.Object, commandContainer);
+        var commandService = new CommandService<DiscordMessage>(logger, _botMock.Object, commandContainer);
 
         var discordMessage = MessageObjectMother.CreateDiscordMessageWithContent("!IDoesNotExist");
         await commandService.Handle(discordMessage, CancellationToken.None);
 
         const string expectedResponse = "Not sure what you were trying to do? That is not an available command. Try '!help' or '!help <command>'";
-        botMock.Verify(x => x.SendMessageAsync(It.Is<DiscordMessage>(x => x.Content == expectedResponse)));
+        _botMock.Verify(x => x.SendMessageAsync(It.Is<DiscordMessage>(x => x.Content == expectedResponse)));
     }
 
     [Fact]
     public async Task NonModerator_Executing_ElevatedCommand_Errors()
     {
-        var botMock = new Mock<IMessageBot<DiscordMessage>>();
-        botMock.Setup(x => x.SendMessageAsync(It.IsAny<DiscordMessage>())).Verifiable();
-
         var (add, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new AddCommand(container));
 
-        var commandService = new CommandService<DiscordMessage>(_logger, botMock.Object, commandContainer);
+        var commandService = new CommandService<DiscordMessage>(_logger, _botMock.Object, commandContainer);
         var discordMessage = MessageObjectMother.CreateDiscordMessageWithContent($"{add.Name} !test nah fam <nice>");
 
         await commandService.Handle(discordMessage, CancellationToken.None);
 
-        botMock.Verify(x => x.SendMessageAsync(It.Is<DiscordMessage>(x => x.Content == "You're not allowed to use that command")));
+        _botMock.Verify(x => x.SendMessageAsync(It.Is<DiscordMessage>(x => x.Content == "You're not allowed to use that command")));
         Assert.DoesNotContain(commandContainer.Value.Commands, x => x.Value.Name == "!test");
     }
 
