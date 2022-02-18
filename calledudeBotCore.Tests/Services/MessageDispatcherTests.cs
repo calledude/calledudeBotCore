@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace calledudeBotCore.Tests;
+namespace calledudeBotCore.Tests.Services;
 
 public class MessageDispatcherTests
 {

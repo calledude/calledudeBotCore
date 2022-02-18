@@ -1,4 +1,5 @@
 ﻿using calledudeBot.Bots;
+using calledudeBot.Chat;
 using calledudeBot.Chat.Commands;
 using calledudeBot.Chat.Info;
 using MediatR;
@@ -7,16 +8,16 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace calledudeBot.Chat;
+namespace calledudeBot.Services;
 
-public class CommandHandler<T> : INotificationHandler<T>
+public class CommandService<T> : INotificationHandler<T>
     where T : IMessage<T>
 {
     private readonly ILogger _logger;
     private readonly IMessageBot<T> _bot;
     private readonly Lazy<CommandContainer> _commandContainer;
 
-    public CommandHandler(ILogger<CommandHandler<T>> logger, IMessageBot<T> bot, Lazy<CommandContainer> commandContainer)
+    public CommandService(ILogger<CommandService<T>> logger, IMessageBot<T> bot, Lazy<CommandContainer> commandContainer)
     {
         _logger = logger;
         _bot = bot;

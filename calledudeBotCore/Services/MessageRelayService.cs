@@ -1,4 +1,5 @@
 ﻿using calledudeBot.Bots;
+using calledudeBot.Chat;
 using calledudeBot.Chat.Commands;
 using calledudeBot.Config;
 using calledudeBot.Models;
@@ -8,19 +9,19 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace calledudeBot.Chat;
+namespace calledudeBot.Services;
 
-public sealed class RelayHandler : INotificationHandler<RelayNotification<IrcMessage>>
+public sealed class MessageRelayService : INotificationHandler<RelayNotification<IrcMessage>>
 {
     private readonly RelayState _relayState;
     private readonly string _streamerNick;
-    private readonly ILogger<RelayHandler> _logger;
+    private readonly ILogger<MessageRelayService> _logger;
     private readonly ITwitchUser _twitch;
     private readonly SteamBot _steam;
     private readonly IOsuBot _osu;
 
-    public RelayHandler(
-        ILogger<RelayHandler> logger,
+    public MessageRelayService(
+        ILogger<MessageRelayService> logger,
         RelayState relayState,
         ITwitchUser twitch,
         SteamBot steam,

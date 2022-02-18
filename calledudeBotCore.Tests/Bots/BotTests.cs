@@ -20,7 +20,7 @@ namespace calledudeBotCore.Tests;
 
 public class BotTests
 {
-    private static readonly Logger<CommandHandler<IrcMessage>> _commandLogger = new(NullLoggerFactory.Instance);
+    private static readonly Logger<CommandService<IrcMessage>> _commandLogger = new(NullLoggerFactory.Instance);
     private static readonly Logger<IrcClient> _ircClientLogger = new(NullLoggerFactory.Instance);
     private static readonly Logger<TwitchBot> _twitchLogger = new(NullLoggerFactory.Instance);
 
@@ -49,7 +49,7 @@ public class BotTests
         var commandContainer = CommandContainerObjectMother.CreateLazy(fakeCommands);
 
         var botMock = new Mock<IMessageBot<IrcMessage>>();
-        var twitchCommandHandler = new CommandHandler<IrcMessage>(_commandLogger, botMock.Object, commandContainer);
+        var twitchCommandService = new CommandService<IrcMessage>(_commandLogger, botMock.Object, commandContainer);
 
         var message = new IrcMessage(
             "",
@@ -63,7 +63,7 @@ public class BotTests
         var commandExecutions = fakeCommands.Select(x =>
         {
             message = message.CloneWithMessage(x.Name);
-            return twitchCommandHandler.Handle(message, CancellationToken.None);
+            return twitchCommandService.Handle(message, CancellationToken.None);
         });
 
         await Task.WhenAll(commandExecutions);
