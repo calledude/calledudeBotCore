@@ -84,7 +84,7 @@ public static class ServiceCollectionExtensions
 
 	public static IServiceCollection AddCommands(this IServiceCollection services)
 	{
-		var commands = JsonConvert.DeserializeObject<List<Command>>(File.ReadAllText(CommandUtils.CommandFile)) ?? new List<Command>();
+		var commands = JsonConvert.DeserializeObject<List<Command>>(File.ReadAllText(CommandContainer.COMMANDFILE)) ?? new List<Command>();
 
 		var specialCommands = Assembly.GetExecutingAssembly()
 			.GetTypes()

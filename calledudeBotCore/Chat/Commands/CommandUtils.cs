@@ -1,71 +1,48 @@
-﻿using Newtonsoft.Json;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.Collections.Generic;
 
 namespace calledudeBot.Chat.Commands;
 
 public static class CommandUtils
 {
-    internal const char PREFIX = '!';
-    internal static string CommandFile { get; } = "commands.json";
+	internal const char PREFIX = '!';
 
-    public static bool IsCommand(string message)
-        => message[0] == PREFIX && message.Length > 1;
+	public static bool IsCommand(string message)
+		=> message[0] == PREFIX && message.Length > 1;
 
-    //Returns the Command object or null depending on if it exists or not.
-    internal static Command? GetExistingCommand(this IDictionary<string, Command> commands, string? cmd)
-    {
-        if (string.IsNullOrWhiteSpace(cmd))
-            return null;
+	//Returns the Command object or null depending on if it exists or not.
+	internal static Command? GetExistingCommand(this IDictionary<string, Command> commands, string? cmd)
+	{
+		if (string.IsNullOrWhiteSpace(cmd))
+			return null;
 
-        commands.TryGetValue(cmd.AddPrefix(), out var command);
-        return command;
-    }
+		commands.TryGetValue(cmd.AddPrefix(), out var command);
+		return command;
+	}
 
-    internal static Command? GetExistingCommand(this IDictionary<string, Command> commands, IEnumerable<string> prefixedWords)
-    {
-        foreach (var word in prefixedWords)
-        {
-            if (GetExistingCommand(commands, word) is Command c)
-                return c;
-        }
+	internal static Command? GetExistingCommand(this IDictionary<string, Command> commands, IEnumerable<string> prefixedWords)
+	{
+		foreach (var word in prefixedWords)
+		{
+			if (GetExistingCommand(commands, word) is Command c)
+				return c;
+		}
 
-        return null;
-    }
+		return null;
+	}
 
-    internal static void SaveCommandsToFile(this IDictionary<string, Command> commandDictionary)
-    {
-        var filteredCommands = commandDictionary.Values
-            .Where(x => x.GetType() == typeof(Command))
-            .Distinct();
+	internal static string AddPrefix(this string str)
+		=> str[0] == PREFIX ? str : $"{PREFIX}{str}";
 
-        var commands =
-            JsonConvert.SerializeObject(
-                filteredCommands,
-                Formatting.Indented,
-                new JsonSerializerSettings
-                {
-                    NullValueHandling = NullValueHandling.Ignore,
-                    DefaultValueHandling = DefaultValueHandling.Ignore
-                });
+	public static void Add(this IDictionary<string, Command> commands, Command command)
+	{
+		commands.Add(command.Name!, command);
 
-        File.WriteAllText(CommandFile, commands);
-    }
+		if (command.AlternateName is null)
+			return;
 
-    internal static string AddPrefix(this string str)
-        => str[0] == PREFIX ? str : $"{PREFIX}{str}";
-
-    public static void Add(this IDictionary<string, Command> commands, Command command)
-    {
-        commands.Add(command.Name!, command);
-
-        if (command.AlternateName is null)
-            return;
-
-        foreach (var alt in command.AlternateName)
-        {
-            commands.Add(alt, command);
-        }
-    }
+		foreach (var alt in command.AlternateName)
+		{
+			commands.Add(alt, command);
+		}
+	}
 }
