@@ -2,7 +2,12 @@
 
 namespace calledudeBot.Models;
 
-public class RelayState
+public interface IRelayState
 {
-    public DateTime LastMessage { get; set; } = DateTime.Now;
+	DateTime LastMessage { get; set; }
+}
+
+public class RelayState : IRelayState
+{
+	public DateTime LastMessage { get; set; } = DateTime.Now;
 }
