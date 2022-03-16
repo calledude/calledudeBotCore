@@ -1,5 +1,4 @@
-﻿using calledudeBot.Chat;
-using calledudeBot.Chat.Commands;
+﻿using calledudeBot.Chat.Commands;
 using calledudeBot.Chat.Info;
 using calledudeBotCore.Tests.ObjectMothers;
 using Moq;
@@ -28,11 +27,11 @@ public class DeleteCommandTests
 
 	[Fact]
 	public async Task DeletingSpecialCommandNotAllowed_SpecialCommand()
-	=> await DeletingSpecialCommandNotAllowed<SpecialCommand>();
+		=> await DeletingSpecialCommandNotAllowed<SpecialCommand>();
 
 	[Fact]
 	public async Task DeletingSpecialCommandNotAllowed_SpecialCommand_CommandParameter()
-	=> await DeletingSpecialCommandNotAllowed<SpecialCommand<CommandParameter>>();
+		=> await DeletingSpecialCommandNotAllowed<SpecialCommand<CommandParameter>>();
 
 	private async Task DeletingSpecialCommandNotAllowed<T>() where T : Command
 	{
@@ -40,9 +39,7 @@ public class DeleteCommandTests
 		specialCommand.SetupGet(x => x.Name).Returns("!something");
 		_commands.Add(specialCommand.Object);
 
-		var messageContent = $"{_target.Name} !something";
-		var commandParameter = CommandParameterObjectMother.CreateWithMessageContentAsMod(messageContent);
-
+		var commandParameter = CommandParameterObjectMother.CreateWithMessageContentAsMod($"{_target.Name} !something");
 		var response = await _target.Handle(commandParameter);
 
 		Assert.Equal("You can't remove a special command.", response);
@@ -51,7 +48,6 @@ public class DeleteCommandTests
 	[Fact]
 	public async Task DeleteAlternate()
 	{
-
 		const string alternateName = "!yo";
 		const string cmdName = "!hi";
 		var commandToDelete = new Command()
@@ -63,8 +59,8 @@ public class DeleteCommandTests
 
 		_commands.Add(commandToDelete);
 
-		var messageParams = $"{_target.Name} {alternateName}".Split();
-		var response = await _target.Handle(new CommandParameter<IrcMessage>(messageParams, new IrcMessage("", null, null)));
+		var commandParameter = CommandParameterObjectMother.CreateWithMessageContent($"{_target.Name} {alternateName}");
+		var response = await _target.Handle(commandParameter);
 
 		Assert.DoesNotContain(_commands, x => x.Key == alternateName);
 		Assert.Contains(_commands, x => x.Key == cmdName);
