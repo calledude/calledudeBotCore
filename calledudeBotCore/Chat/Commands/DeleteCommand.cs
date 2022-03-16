@@ -1,5 +1,6 @@
 ﻿using calledudeBot.Chat.Info;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -32,14 +33,14 @@ public sealed class DeleteCommand : SpecialCommand<CommandParameter>
 		return Task.FromResult(response);
 	}
 
-	private string RemoveCommand(Command cmd, string? altName = null)
+	private string RemoveCommand(Command cmd, string? altName)
 	{
-		if (cmd is SpecialCommand)
+		if (cmd is SpecialCommand || cmd is SpecialCommand<CommandParameter>)
 			return "You can't remove a special command.";
 
 		string response;
 
-		if (altName != cmd.Name && altName is not null)
+		if (ShouldOnlyAlternatesBeDeleted(cmd, altName))
 		{
 			cmd.AlternateName!.Remove(altName);
 			_commandContainer.Value.Commands.Remove(altName);
@@ -64,4 +65,7 @@ public sealed class DeleteCommand : SpecialCommand<CommandParameter>
 
 		return response;
 	}
+
+	private static bool ShouldOnlyAlternatesBeDeleted(Command cmd, [NotNullWhen(true)] string? altName)
+		=> altName != cmd.Name && altName is not null;
 }
