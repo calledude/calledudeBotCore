@@ -100,7 +100,7 @@ public static class ServiceCollectionExtensions
 			services.AddSingleton(typeof(Command), cmd);
 		}
 
-		services.AddSingleton(x => new CommandContainer(x.GetServices<Command>()));
+		services.AddSingleton<ICommandContainer, CommandContainer>();
 		return services;
 	}
 

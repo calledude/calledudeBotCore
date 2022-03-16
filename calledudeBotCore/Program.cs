@@ -29,7 +29,7 @@ public static class Program
 
 		Log.Logger.Information("Migrations applied");
 
-		var commandContainer = services.GetRequiredService<CommandContainer>();
+		var commandContainer = services.GetRequiredService<ICommandContainer>();
 		Log.Logger.Information($"Done. Loaded {commandContainer.Commands.Count} commands.");
 
 		await host.RunAsync();

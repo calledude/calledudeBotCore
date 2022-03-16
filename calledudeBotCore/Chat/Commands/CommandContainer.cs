@@ -6,11 +6,18 @@ using System.Linq;
 
 namespace calledudeBot.Chat.Commands;
 
-public class CommandContainer //Implement IDictionary<string, Command>?
+public interface ICommandContainer
+{
+	IDictionary<string, Command> Commands { get; }
+
+	void SaveCommandsToFile();
+}
+
+public class CommandContainer : ICommandContainer //Implement IDictionary<string, Command>?
 {
 	public const string COMMANDFILE = "commands.json";
 
-	public IDictionary<string, Command> Commands { get; set; } = new Dictionary<string, Command>(StringComparer.OrdinalIgnoreCase);
+	public IDictionary<string, Command> Commands { get; } = new Dictionary<string, Command>(StringComparer.OrdinalIgnoreCase);
 
 	public CommandContainer(IEnumerable<Command> commands)
 	{

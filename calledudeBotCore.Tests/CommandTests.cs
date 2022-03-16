@@ -10,68 +10,50 @@ namespace calledudeBotCore.Tests;
 
 public class CommandTests
 {
-    [Fact]
-    public async Task Custom_Command_Only_Alternate_Is_Deleted()
-    {
-        var (deleteCmd, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new DeleteCommand(container));
+	[Fact]
+	public async Task Custom_Command_Only_Alternate_Is_Deleted()
+	{
+		var (deleteCmd, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new DeleteCommand(container));
 
-        const string alternateName = "!yo";
-        const string cmdName = "!hi";
-        var commandToDelete = new Command()
-        {
-            Name = cmdName,
-            Response = "hi :)",
-            AlternateName = new List<string> { alternateName }
-        };
+		const string alternateName = "!yo";
+		const string cmdName = "!hi";
+		var commandToDelete = new Command()
+		{
+			Name = cmdName,
+			Response = "hi :)",
+			AlternateName = new List<string> { alternateName }
+		};
 
-        commandContainer.Value.Commands.Add(commandToDelete);
+		commandContainer.Value.Commands.Add(commandToDelete);
 
-        var messageParams = $"{deleteCmd.Name} {alternateName}".Split();
-        var response = await deleteCmd.Handle(new CommandParameter<IrcMessage>(messageParams, new IrcMessage("", null, null)));
+		var messageParams = $"{deleteCmd.Name} {alternateName}".Split();
+		var response = await deleteCmd.Handle(new CommandParameter<IrcMessage>(messageParams, new IrcMessage("", null, null)));
 
-        Assert.DoesNotContain(commandContainer.Value.Commands, x => x.Key == alternateName);
-        Assert.Contains(commandContainer.Value.Commands, x => x.Key == cmdName);
-        Assert.Equal($"Deleted alternative command '{alternateName}'", response);
-    }
+		Assert.DoesNotContain(commandContainer.Value.Commands, x => x.Key == alternateName);
+		Assert.Contains(commandContainer.Value.Commands, x => x.Key == cmdName);
+		Assert.Equal($"Deleted alternative command '{alternateName}'", response);
+	}
 
-    [Fact]
-    public async Task Custom_Command_And_Alternates_Gets_Deleted_Properly()
-    {
-        var (deleteCmd, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new DeleteCommand(container));
+	[Fact]
+	public async Task Custom_Command_And_Alternates_Gets_Deleted_Properly()
+	{
+		var (deleteCmd, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new DeleteCommand(container));
 
-        const string alternateName = "!yo";
-        const string cmdName = "!hi";
-        var commandToDelete = new Command()
-        {
-            Name = cmdName,
-            Response = "hi :)",
-            AlternateName = new List<string> { alternateName }
-        };
+		const string alternateName = "!yo";
+		const string cmdName = "!hi";
+		var commandToDelete = new Command()
+		{
+			Name = cmdName,
+			Response = "hi :)",
+			AlternateName = new List<string> { alternateName }
+		};
 
-        commandContainer.Value.Commands.Add(commandToDelete);
-        var commandParameter = CommandParameterObjectMother.CreateWithMessageContent($"{deleteCmd.Name} {commandToDelete.Name}");
+		commandContainer.Value.Commands.Add(commandToDelete);
+		var commandParameter = CommandParameterObjectMother.CreateWithMessageContent($"{deleteCmd.Name} {commandToDelete.Name}");
 
-        var response = await deleteCmd.Handle(commandParameter);
+		var response = await deleteCmd.Handle(commandParameter);
 
-        Assert.DoesNotContain(commandContainer.Value.Commands, x => x.Key == cmdName || x.Key == alternateName);
-        Assert.Equal($"Deleted command '{commandToDelete.Name}'", response);
-    }
-
-    [Fact]
-    public async Task Command_Gets_Added_Properly()
-    {
-        var (addCmd, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new AddCommand(container));
-
-        var messageContent = $"{addCmd.Name} !test nah fam <nice>";
-        var commandParameter = CommandParameterObjectMother.CreateWithMessageContentAsMod(messageContent);
-
-        var response = await addCmd.Handle(commandParameter);
-
-        Assert.Contains(commandContainer.Value.Commands,
-            x => x.Value.Name == "!test"
-                && x.Value.Description == "nice"
-                && x.Value.Response == "nah fam");
-
-        Assert.Equal("Added command '!test'", response);
-    }
+		Assert.DoesNotContain(commandContainer.Value.Commands, x => x.Key == cmdName || x.Key == alternateName);
+		Assert.Equal($"Deleted command '{commandToDelete.Name}'", response);
+	}
 }

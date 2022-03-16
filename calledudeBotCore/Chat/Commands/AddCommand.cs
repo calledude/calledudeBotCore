@@ -1,16 +1,25 @@
 ﻿using calledudeBot.Chat.Info;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace calledudeBot.Chat.Commands;
 
+//TODO: Rewrite this, this is utter garbage
+// 1. Can't edit command name
+// 2. Need to expand functionality around alternate name editing
+//	2a. Editing the alternate name of something is not possible, i.e. !oldAlt -> !newAlt, since Count needs to be non-equal
+//	2b. The response is lazy
+//	2c. Removing a single alternate name is annoying
+// 3. Should probably split this out into either sub-commands, i.e. !addcommand edit <name|description|response|etc> or entirely new commands, !editcommand
+// 4. Multiple changes response is perhaps a bit lazy
+// 5. Say I just want to edit the description of something, I have to provide the command as-is in order to not overwrite anything else
+// 6. Checking 'changes' twice is ugly
 public sealed class AddCommand : SpecialCommand<CommandParameter>
 {
-	private readonly Lazy<CommandContainer> _commandContainer;
+	private readonly Lazy<ICommandContainer> _commandContainer;
 
-	public AddCommand(Lazy<CommandContainer> commandContainer)
+	public AddCommand(Lazy<ICommandContainer> commandContainer)
 	{
 		Name = "!addcmd";
 		Description = "Adds a command to the command list";
@@ -34,7 +43,7 @@ public sealed class AddCommand : SpecialCommand<CommandParameter>
 				if (foundCommand.Name!.Equals(newCommand.Name))
 					return EditCommand(foundCommand, newCommand);
 
-				return "One or more of the alternate commands already exists.";
+				return $"Conflicting command name usage found in command '{foundCommand.Name}'";
 			}
 			else
 			{
@@ -43,7 +52,7 @@ public sealed class AddCommand : SpecialCommand<CommandParameter>
 				return $"Added command '{newCommand.Name}'";
 			}
 		}
-		catch (Exception e)
+		catch (ArgumentException e)
 		{
 			return e.Message;
 		}
@@ -65,14 +74,13 @@ public sealed class AddCommand : SpecialCommand<CommandParameter>
 		return Task.FromResult(response);
 	}
 
-	private static string EditCommand(Command foundCommand, Command newCommand)
+	private string EditCommand(Command foundCommand, Command newCommand)
 	{
-		string response;
 		if (foundCommand is SpecialCommand || foundCommand is SpecialCommand<CommandParameter>)
 			return "You can't change a special command.";
 
 		var changes = 0;
-		response = $"Command '{newCommand.Name}' already exists.";
+		var response = $"Command '{newCommand.Name}' already exists.";
 
 		if (newCommand.Response != foundCommand.Response)
 		{
@@ -89,6 +97,11 @@ public sealed class AddCommand : SpecialCommand<CommandParameter>
 			response = EditCommandAlternateNames(foundCommand, newCommand, ref changes);
 		}
 
+		if (changes >= 1)
+		{
+			_commandContainer.Value.SaveCommandsToFile();
+		}
+
 		return changes > 1 ? $"Done. Several changes made to command '{newCommand.Name}'." : response;
 	}
 
@@ -102,8 +115,12 @@ public sealed class AddCommand : SpecialCommand<CommandParameter>
 		}
 		else
 		{
-			(foundCommand.AlternateName ??= new List<string>()).AddRange(newCommand.AlternateName);
-			foundCommand.AlternateName = foundCommand.AlternateName.Distinct().ToList();
+			var newAlternates = foundCommand.AlternateName ?? Enumerable.Empty<string>();
+			foundCommand.AlternateName = newAlternates
+				.Concat(newCommand.AlternateName)
+				.Distinct()
+				.ToList();
+
 			response = $"Changed alternate command names for '{foundCommand.Name}'. It now has {foundCommand.AlternateName.Count} alternates.";
 		}
 		changes++;
