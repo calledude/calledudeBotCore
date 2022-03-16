@@ -8,9 +8,9 @@ namespace calledudeBot.Chat.Commands;
 
 public sealed class HelpCommand : SpecialCommand<CommandParameter>
 {
-	private readonly Lazy<CommandContainer> _commandContainer;
+	private readonly Lazy<ICommandContainer> _commandContainer;
 
-	public HelpCommand(Lazy<CommandContainer> commandContainer)
+	public HelpCommand(Lazy<ICommandContainer> commandContainer)
 	{
 		Name = "!help";
 		AlternateName = new List<string> { "!commands", "!cmds" };

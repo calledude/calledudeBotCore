@@ -7,9 +7,9 @@ namespace calledudeBot.Chat.Commands;
 
 public sealed class DeleteCommand : SpecialCommand<CommandParameter>
 {
-	private readonly Lazy<CommandContainer> _commandContainer;
+	private readonly Lazy<ICommandContainer> _commandContainer;
 
-	public DeleteCommand(Lazy<CommandContainer> commandContainer)
+	public DeleteCommand(Lazy<ICommandContainer> commandContainer)
 	{
 		Name = "!delcmd";
 		Description = "Deletes a command from the command list";
