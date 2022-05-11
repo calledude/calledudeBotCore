@@ -136,4 +136,55 @@ public class OsuUserServiceTests
 
 		Assert.Equal(expectedOutput, sentMessageContent);
 	}
+
+	[Fact]
+	public async Task CheckUserUpdate_RespectsCancellationToken()
+	{
+		var client = new Mock<IHttpClientWrapper>();
+		var twitchMock = new Mock<IMessageBot<IrcMessage>>();
+		var timerMock = new Mock<IAsyncTimer>();
+
+		Func<CancellationToken, Task>? elapsedEventSubscription = null;
+		timerMock
+			.SetupAdd(x => x.Elapsed += It.IsAny<Func<CancellationToken, Task>>())
+			.Callback((Func<CancellationToken, Task> callback) => elapsedEventSubscription = callback);
+
+		_ = new OsuUserService(client.Object, _config, twitchMock.Object, _logger, timerMock.Object);
+
+		Assert.NotNull(elapsedEventSubscription);
+
+		var cts = new CancellationTokenSource();
+		cts.Cancel();
+		await elapsedEventSubscription!.Invoke(cts.Token);
+
+		client.VerifyNoOtherCalls();
+		twitchMock.VerifyNoOtherCalls();
+	}
+
+	[Fact]
+	public async Task CheckUserUpdate_OsuUserDataUnavailable_Bails()
+	{
+		var client = new Mock<IHttpClientWrapper>();
+		client
+			.Setup(x => x.GetAsJsonAsync<OsuUser[]>(It.IsAny<string>()))
+			.ReturnsAsync((false, null));
+
+		var twitchMock = new Mock<IMessageBot<IrcMessage>>();
+		var timerMock = new Mock<IAsyncTimer>();
+
+		Func<CancellationToken, Task>? elapsedEventSubscription = null;
+		timerMock
+			.SetupAdd(x => x.Elapsed += It.IsAny<Func<CancellationToken, Task>>())
+			.Callback((Func<CancellationToken, Task> callback) => elapsedEventSubscription = callback);
+
+		_ = new OsuUserService(client.Object, _config, twitchMock.Object, _logger, timerMock.Object);
+
+		Assert.NotNull(elapsedEventSubscription);
+
+		await elapsedEventSubscription!.Invoke(CancellationToken.None);
+
+		client.Verify(x => x.GetAsJsonAsync<OsuUser[]>(It.IsAny<string>()), Times.Once);
+		client.VerifyNoOtherCalls();
+		twitchMock.VerifyNoOtherCalls();
+	}
 }
