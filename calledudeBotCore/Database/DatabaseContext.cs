@@ -7,19 +7,19 @@ namespace calledudeBot.Database;
 
 public class DatabaseContext : DbContext
 {
-    private readonly ILoggerFactory? _loggerFactory;
+	private readonly ILoggerFactory? _loggerFactory;
 
-    public DatabaseContext() { }
+	public DatabaseContext() { }
 
-    public DatabaseContext(ILoggerFactory loggerFactory)
-    {
-        _loggerFactory = loggerFactory;
-    }
+	public DatabaseContext(ILoggerFactory loggerFactory)
+	{
+		_loggerFactory = loggerFactory;
+	}
 
-    public DbSet<UserActivityEntity> UserActivities => Set<UserActivityEntity>();
-    public DbSet<UserSessionEntity> UserSession => Set<UserSessionEntity>();
+	public virtual DbSet<UserActivityEntity> UserActivities => Set<UserActivityEntity>();
+	public virtual DbSet<UserSessionEntity> UserSession => Set<UserSessionEntity>();
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlite("Data Source=calledudeBot.db")
-                        .UseLoggerFactory(_loggerFactory);
+	protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+		=> optionsBuilder.UseSqlite("Data Source=calledudeBot.db")
+						.UseLoggerFactory(_loggerFactory);
 }
