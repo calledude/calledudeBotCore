@@ -35,6 +35,7 @@ public static class ServiceCollectionExtensions
 			.AddHttpClient()
 			.AddSingleton<IMessageDispatcher, MessageDispatcher>()
 			.AddSingleton<IRelayState, RelayState>()
+			.AddSingleton<IStreamingState, StreamingState>()
 			.AddTransient<IStreamMonitor, StreamMonitor>()
 			.AddSingleton<IUserActivityService, UserActivityService>()
 			.AddTransient<IUserSessionService, UserSessionService>()

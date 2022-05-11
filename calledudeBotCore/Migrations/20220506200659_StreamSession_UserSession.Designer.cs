@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using calledudeBot.Database;
 
@@ -10,9 +11,10 @@ using calledudeBot.Database;
 namespace calledudeBotCore.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class UserActivityContextModelSnapshot : ModelSnapshot
+    [Migration("20220506200659_StreamSession_UserSession")]
+    partial class StreamSession_UserSession
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.4");

@@ -1,4 +1,4 @@
-﻿using calledudeBot.Services;
+﻿using calledudeBot.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -8,45 +8,46 @@ namespace calledudeBot.Chat.Commands;
 
 public sealed class UptimeCommand : SpecialCommand
 {
-    private readonly IStreamMonitor _streamMonitor;
+	private readonly IStreamingState _streamingState;
 
-    public UptimeCommand(IStreamMonitor streamMonitor)
-    {
-        Name = "!uptime";
-        Description = "Shows how long the stream has been live";
-        AlternateName = new List<string> { "!live" };
-        RequiresMod = false;
-        _streamMonitor = streamMonitor;
-    }
+	public UptimeCommand(IStreamingState streamingState)
+	{
+		Name = "!uptime";
+		Description = "Shows how long the stream has been live";
+		AlternateName = new List<string> { "!live" };
+		RequiresMod = false;
+		_streamingState = streamingState;
+	}
 
-    public override Task<string> Handle()
-    {
-        var wentLiveAt = WentLiveAt();
-        if (wentLiveAt == default)
-            return Task.FromResult("Streamer isn't live.");
+	public override Task<string> Handle()
+	{
+		var wentLiveAt = WentLiveAt();
+		if (wentLiveAt == default)
+			return Task.FromResult("Streamer isn't live.");
 
-        var timeSinceLive = DateTime.Now - wentLiveAt;
+		var timeSinceLive = DateTime.Now - wentLiveAt;
 
-        if (timeSinceLive.TotalSeconds < 5)
-            return Task.FromResult("The stream has just started.");
+		if (timeSinceLive.TotalSeconds < 5)
+			return Task.FromResult("The stream has just started.");
 
-        var sb = new StringBuilder();
+		var sb = new StringBuilder();
 
-        sb.Append("Stream uptime: ");
+		sb.Append("Stream uptime: ");
 
-        if (timeSinceLive.Hours > 0)
-            sb.Append(timeSinceLive.Hours).Append("h ");
+		if (timeSinceLive.Hours > 0)
+			sb.Append(timeSinceLive.Hours).Append("h ");
 
-        if (timeSinceLive.Minutes > 0)
-            sb.Append(timeSinceLive.Minutes).Append("m ");
+		if (timeSinceLive.Minutes > 0)
+			sb.Append(timeSinceLive.Minutes).Append("m ");
 
-        if (timeSinceLive.Seconds > 0)
-            sb.Append(timeSinceLive.Seconds).Append('s');
+		if (timeSinceLive.Seconds > 0)
+			sb.Append(timeSinceLive.Seconds).Append('s');
 
-        return Task.FromResult(sb.ToString().TrimEnd());
-    }
+		return Task.FromResult(sb.ToString().TrimEnd());
+	}
 
-    private DateTime WentLiveAt() => _streamMonitor.IsStreaming
-            ? _streamMonitor.StreamStarted
-            : default;
+	private DateTime WentLiveAt()
+		=> _streamingState.IsStreaming
+			? _streamingState.StreamStarted
+			: default;
 }

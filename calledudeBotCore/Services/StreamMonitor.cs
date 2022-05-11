@@ -20,9 +20,6 @@ namespace calledudeBot.Services;
 
 public interface IStreamMonitor : IDisposable
 {
-	bool IsStreaming { get; }
-	DateTime StreamStarted { get; }
-
 	Task Connect();
 	Task Handle(ReadyNotification notification, CancellationToken cancellationToken);
 }
@@ -34,6 +31,7 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
 	private CancellationToken _cancellationToken;
 	private readonly OBSWebsocket _obs;
 	private readonly IAsyncTimer _streamStatusTimer;
+	private readonly IStreamingState _streamingState;
 	private readonly SemaphoreSlim _exitSem;
 	private readonly ILogger<StreamMonitor> _logger;
 	private readonly DiscordSocketClient _client;
@@ -42,10 +40,12 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
 	private readonly string? _websocketUrl;
 	private readonly int? _websocketPort;
 
-	public bool IsStreaming { get; private set; }
-	public DateTime StreamStarted { get; private set; }
-
-	public StreamMonitor(ILogger<StreamMonitor> logger, IOptions<BotConfig> options, DiscordSocketClient client, IAsyncTimer timer)
+	public StreamMonitor(
+		ILogger<StreamMonitor> logger,
+		IOptions<BotConfig> options,
+		DiscordSocketClient client,
+		IAsyncTimer timer,
+		IStreamingState streamingState)
 	{
 		var config = options?.Value ?? throw new ArgumentNullException(nameof(options));
 
@@ -67,6 +67,8 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
 		_streamStatusTimer = timer;
 		_streamStatusTimer.Interval = 2000;
 		_streamStatusTimer.Elapsed += CheckDiscordStatus;
+
+		_streamingState = streamingState;
 
 		_announceChannelID = config.AnnounceChannelId;
 		_streamerID = config.StreamerId;
@@ -120,7 +122,7 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
 		}
 		else if (state == OutputState.Stopped)
 		{
-			IsStreaming = false;
+			_streamingState.IsStreaming = false;
 			_streamStatusTimer.Stop();
 			_logger.LogInformation("Stream stopped.");
 		}
@@ -168,7 +170,7 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
 			return;
 
 		_streamStatusTimer.Stop();
-		IsStreaming = true;
+		_streamingState.IsStreaming = true;
 
 		var messages = await _announceChannel!
 			.GetMessagesAsync()
@@ -178,6 +180,7 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
 		{
 			_logger.LogInformation("Streamer went live. Sending announcement to #{channelName}", _announceChannel.Name);
 			await _announceChannel.SendMessageAsync(announcementMessage);
+			_streamingState.SessionId = Guid.NewGuid();
 		}
 	}
 
@@ -192,7 +195,7 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
 		return messages.Any(m =>
 						m.Author.Id == _client.CurrentUser.Id
 						&& m.Content.Equals(msg)
-						&& StreamStarted - m.Timestamp < TimeSpan.FromMinutes(3));
+						&& _streamingState.StreamStarted - m.Timestamp < TimeSpan.FromMinutes(3));
 	}
 
 	private async void OnObsExit(object? sender, EventArgs e)
@@ -200,7 +203,7 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
 		if (!await _exitSem.WaitAsync(150))
 			return;
 
-		IsStreaming = false;
+		_streamingState.IsStreaming = false;
 		_streamStatusTimer.Stop();
 		_obs.Disconnect();
 
@@ -223,12 +226,12 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
 
 	private void CheckLiveStatus(OBSWebsocket sender, StreamStatus status)
 	{
-		if (status.Streaming == IsStreaming && StreamStarted != default)
+		if (status.Streaming == _streamingState.IsStreaming && _streamingState.StreamStarted != default)
 			return;
 
 		if (status.Streaming)
 		{
-			StreamStarted = DateTime.Now.AddSeconds(-status.TotalStreamTime);
+			_streamingState.StreamStarted = DateTime.Now.AddSeconds(-status.TotalStreamTime);
 			_streamStatusTimer.Start(_cancellationToken);
 		}
 	}
