@@ -3,7 +3,6 @@ using calledudeBot.Config;
 using calledudeBot.Models;
 using calledudeBot.Utilities;
 using Discord;
-using Discord.WebSocket;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -34,7 +33,7 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
 	private readonly IStreamingState _streamingState;
 	private readonly SemaphoreSlim _exitSem;
 	private readonly ILogger<StreamMonitor> _logger;
-	private readonly DiscordSocketClient _client;
+	private readonly IDiscordSocketClient _client;
 	private readonly ulong _announceChannelID;
 	private readonly ulong _streamerID;
 	private readonly string? _websocketUrl;
@@ -43,7 +42,7 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
 	public StreamMonitor(
 		ILogger<StreamMonitor> logger,
 		IOptions<BotConfig> options,
-		DiscordSocketClient client,
+		IDiscordSocketClient client,
 		IAsyncTimer timer,
 		IStreamingState streamingState)
 	{
@@ -95,7 +94,7 @@ public sealed class StreamMonitor : INotificationHandler<ReadyNotification>, ISt
 			return;
 		}
 
-		_announceChannel = _client.GetChannel(_announceChannelID) as ITextChannel;
+		_announceChannel = _client.GetMessageChannel(_announceChannelID) as ITextChannel;
 		if (_announceChannel is null)
 		{
 			_logger.LogWarning("Invalid channel. Will not announce when stream goes live.");

@@ -11,7 +11,10 @@ public static class MessageObjectMother
 		=> new(content, string.Empty, new User(username ?? string.Empty));
 
 	public static DiscordMessage CreateDiscordMessageWithContent(string content)
-		=> new(content, string.Empty, UserObjectMother.Empty, 0);
+		=> CreateDiscordMessage(content, 0);
+
+	public static DiscordMessage CreateDiscordMessage(string content, ulong id)
+	=> new(content, string.Empty, UserObjectMother.Empty, id);
 
 	public static IrcMessage CreateEmptyWithUser(string userName)
 		=> new(string.Empty, string.Empty, UserObjectMother.Create(userName));
