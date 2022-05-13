@@ -9,8 +9,8 @@ using calledudeBot.Services;
 using calledudeBotCore.Tests.ObjectMothers;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,9 +20,9 @@ namespace calledudeBotCore.Tests;
 
 public class BotTests
 {
-	private static readonly Logger<CommandService<IrcMessage>> _commandLogger = new(NullLoggerFactory.Instance);
-	private static readonly Logger<IrcClient> _ircClientLogger = new(NullLoggerFactory.Instance);
-	private static readonly Logger<TwitchBot> _twitchLogger = new(NullLoggerFactory.Instance);
+	private static readonly Logger<CommandService<IrcMessage>> _commandLogger = LoggerObjectMother.NullLoggerFor<CommandService<IrcMessage>>();
+	private static readonly Logger<IrcClient> _ircClientLogger = LoggerObjectMother.NullLoggerFor<IrcClient>();
+	private static readonly Logger<TwitchBot> _twitchLogger = LoggerObjectMother.NullLoggerFor<TwitchBot>();
 
 	[Fact]
 	public async Task Mods_Only_Evaluates_Once_Per_Context()
@@ -74,8 +74,7 @@ public class BotTests
 	[Fact]
 	public async Task Mods_Are_Case_Insensitive()
 	{
-		var ircClient = new IrcClient(_ircClientLogger, new Mock<ITcpClient>().Object);
-		var twitch = new TwitchBot(ircClient, new TwitchBotConfig { TwitchChannel = "#calledude" }, new Mock<IMessageDispatcher>().Object, _twitchLogger);
+		var twitch = new TwitchBot(new Mock<IIrcClient>().Object, new TwitchBotConfig { TwitchChannel = "#calledude" }, null!, _twitchLogger);
 		await twitch.HandleRawMessage(":tmi.twitch.tv NOTICE #calledude :The moderators of this channel are: CALLEDUDE, calLEDuDeBoT");
 		var mods = await twitch.GetMods();
 
@@ -182,5 +181,57 @@ public class BotTests
 
 		Assert.NotNull(readyNotification);
 		Assert.Equal(twitch, readyNotification!.Bot);
+	}
+
+	[Fact]
+	public async Task UserJoinIsPublished()
+	{
+		Func<string, Task>? userJoinedEventSubscription = null;
+		var ircClient = new Mock<IIrcClient>();
+		ircClient
+			.SetupAdd(x => x.ChatUserJoined += It.IsAny<Func<string, Task>>())
+			.Callback((Func<string, Task> evt) => userJoinedEventSubscription = evt);
+
+		UserParticipationNotification? actualNotification = null;
+		var messageDispatcher = new Mock<IMessageDispatcher>();
+		messageDispatcher
+			.Setup(x => x.PublishAsync(It.IsAny<UserParticipationNotification>(), It.IsAny<CancellationToken>()))
+			.Callback((INotification notification, CancellationToken _) => actualNotification = (UserParticipationNotification)notification);
+
+		//Subscribes to Leave/Join events
+		_ = new TwitchBot(ircClient.Object, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher.Object, _twitchLogger);
+
+		const string username = "calledude";
+		await userJoinedEventSubscription!.Invoke(username);
+
+		Assert.Equal(username, actualNotification!.User.Name);
+		Assert.Equal(ParticipationType.Join, actualNotification!.ParticipationType);
+		Assert.Equal(DateTime.Now, actualNotification!.When, TimeSpan.FromSeconds(1));
+	}
+
+	[Fact]
+	public async Task UserLeaveIsPublished()
+	{
+		Func<string, Task>? userLeftEventSubscription = null;
+		var ircClient = new Mock<IIrcClient>();
+		ircClient
+			.SetupAdd(x => x.ChatUserLeft += It.IsAny<Func<string, Task>>())
+			.Callback((Func<string, Task> evt) => userLeftEventSubscription = evt);
+
+		UserParticipationNotification? actualNotification = null;
+		var messageDispatcher = new Mock<IMessageDispatcher>();
+		messageDispatcher
+			.Setup(x => x.PublishAsync(It.IsAny<UserParticipationNotification>(), It.IsAny<CancellationToken>()))
+			.Callback((INotification notification, CancellationToken _) => actualNotification = (UserParticipationNotification)notification);
+
+		//Subscribes to Leave/Join events
+		_ = new TwitchBot(ircClient.Object, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher.Object, _twitchLogger);
+
+		const string username = "calledude";
+		await userLeftEventSubscription!.Invoke(username);
+
+		Assert.Equal(username, actualNotification!.User.Name);
+		Assert.Equal(ParticipationType.Leave, actualNotification!.ParticipationType);
+		Assert.Equal(DateTime.Now, actualNotification!.When, TimeSpan.FromSeconds(1));
 	}
 }
