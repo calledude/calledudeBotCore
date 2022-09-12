@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace calledudeBot.Services;
 
 public class CommandService<T> : INotificationHandler<T>
-	where T : IMessage<T>
+	where T : Message
 {
 	private readonly ILogger _logger;
 	private readonly IMessageBot<T> _bot;
@@ -41,7 +41,7 @@ public class CommandService<T> : INotificationHandler<T>
 			return;
 		}
 
-		await _bot.SendMessageAsync(notification.CloneWithMessage(response));
+		await _bot.SendMessageAsync(notification with { Content = response });
 	}
 
 	private async Task<string?> GetResponse(CommandParameter<T> param, Command? cmd)

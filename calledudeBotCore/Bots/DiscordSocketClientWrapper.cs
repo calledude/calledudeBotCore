@@ -5,15 +5,14 @@ using System.Threading.Tasks;
 
 namespace calledudeBot.Bots;
 
-public interface IDiscordSocketClient
+public interface IDiscordSocketClient : IDisposable
 {
-	ISelfUser CurrentUser { get; }
-
 	event Func<LogMessage, Task> Log;
 	event Func<IMessage, Task> MessageReceived;
 	event Func<Task> Ready;
 
-	void Dispose();
+	ISelfUser CurrentUser { get; }
+
 	IMessageChannel? GetMessageChannel(ulong id);
 	Task Login(string token);
 	Task Logout();
@@ -67,5 +66,4 @@ public class DiscordSocketClientWrapper : IDiscordSocketClient
 
 	public void Dispose()
 		=> _discordClient.Dispose();
-
 }

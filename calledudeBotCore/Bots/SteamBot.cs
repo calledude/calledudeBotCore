@@ -83,8 +83,12 @@ public class SteamBot : Bot<IrcMessage>, ISteamBot
 
 		_logger.LogInformation("Relaying message to Twitch: '{message}'", callback.Message);
 
-		var user = new User(_steamFriends.GetFriendPersonaName(callback.Sender)!, false);
-		var message = new IrcMessage(callback.Message, "STEAM", user);
+		var message = new IrcMessage
+		{
+			Content = callback.Message,
+			Sender = new User(_steamFriends.GetFriendPersonaName(callback.Sender)!, false)
+		};
+
 		await _messageDispatcher.PublishAsync(new RelayNotification<IrcMessage>(this, message));
 	}
 

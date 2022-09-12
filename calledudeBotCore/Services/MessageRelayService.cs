@@ -85,7 +85,7 @@ public sealed class MessageRelayService : INotificationHandler<RelayNotification
 
 	private async Task RelayMessage(RelayNotification<IrcMessage> notification, string responseContent, IMessageBot<IrcMessage> relaySubject)
 	{
-		var response = notification.Message.CloneWithMessage(responseContent);
+		var response = notification.Message with { Content = responseContent };
 		_logger.LogInformation("{sourceBotName} -> {relaySubjectName}: {messageContent}", notification.Bot.Name, relaySubject.Name, responseContent);
 
 		await relaySubject.SendMessageAsync(response);

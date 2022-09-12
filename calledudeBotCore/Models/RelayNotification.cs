@@ -4,14 +4,14 @@ using MediatR;
 
 namespace calledudeBot.Models;
 
-public class RelayNotification<T> : INotification where T : IMessage<T>
+public class RelayNotification<T> : INotification where T : IMessage
 {
-    public T Message { get; }
-    public IMessageBot<T> Bot { get; }
+	public T Message { get; }
+	public IMessageBot<T> Bot { get; }
 
-    public RelayNotification(IMessageBot<T> bot, T message)
-    {
-        Bot = bot;
-        Message = message;
-    }
+	public RelayNotification(IMessageBot<T> bot, T message)
+	{
+		Bot = bot;
+		Message = message;
+	}
 }

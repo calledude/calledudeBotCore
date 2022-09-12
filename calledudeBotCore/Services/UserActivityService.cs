@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace calledudeBot.Services;
 
-public interface IUserActivityService : INotificationHandler<UserParticipationNotification>, INotificationHandler<IMessage<IrcMessage>>
+public interface IUserActivityService : INotificationHandler<UserParticipationNotification>, INotificationHandler<IrcMessage>
 {
 	Task<UserActivityEntity?> GetUserActivity(string userName);
 }
@@ -45,7 +45,7 @@ public class UserActivityService : IUserActivityService
 		}
 	}
 
-	public async Task Handle(IMessage<IrcMessage> notification, CancellationToken cancellationToken)
+	public async Task Handle(IrcMessage notification, CancellationToken cancellationToken)
 		=> await _userActivityRepository.SaveUserChatActivity(notification.Sender.Name);
 
 	private async Task HandleJoin(UserParticipationNotification notification)

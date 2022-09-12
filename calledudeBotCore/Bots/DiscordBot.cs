@@ -84,11 +84,13 @@ public sealed class DiscordBot : Bot<DiscordMessage>
 		if (message.Author is not IGuildUser user)
 			return;
 
-		var msg = new DiscordMessage(
-			message.Content,
-			$"#{message.Channel.Name}",
-			new User($"{user.Username}#{user.Discriminator}", IsMod(user)),
-			message.Channel.Id);
+		var msg = new DiscordMessage
+		{
+			Content = message.Content,
+			Channel = $"#{message.Channel.Name}",
+			Sender = new User($"{user.Username}#{user.Discriminator}", IsMod(user)),
+			Destination = message.Channel.Id
+		};
 
 		await _dispatcher.PublishAsync(msg);
 	}

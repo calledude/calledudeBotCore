@@ -30,7 +30,7 @@ public abstract class CommandParameter
 	public abstract IMessage Message { get; }
 }
 
-public class CommandParameter<T> : CommandParameter, IRequest<T> where T : IMessage<T>
+public class CommandParameter<T> : CommandParameter, IRequest<T> where T : IMessage
 {
 	public override IMessage Message { get; }
 

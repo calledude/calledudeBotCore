@@ -129,10 +129,12 @@ public class UserActivityServiceTests
 	public async Task UserChatActivity_IsSaved()
 	{
 		const string userName = "calledude";
-		var notification = new Mock<IMessage<IrcMessage>>();
-		notification.SetupGet(x => x.Sender).Returns(UserObjectMother.Create(userName));
+		var notification = new IrcMessage()
+		{
+			Sender = UserObjectMother.Create(userName)
+		};
 
-		await _userActivityService.Handle(notification.Object, CancellationToken.None);
+		await _userActivityService.Handle(notification, CancellationToken.None);
 
 		_userActivityRepository.Verify(x => x.SaveUserChatActivity(userName), Times.Once);
 		_userActivityRepository.VerifyNoOtherCalls();

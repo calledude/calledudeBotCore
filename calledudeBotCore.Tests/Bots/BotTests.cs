@@ -51,18 +51,18 @@ public class BotTests
 		var botMock = new Mock<IMessageBot<IrcMessage>>();
 		var twitchCommandService = new CommandService<IrcMessage>(_commandLogger, botMock.Object, commandContainer);
 
-		var message = new IrcMessage(
-			"",
-			"",
-			new User("", () =>
+		var message = new IrcMessage
+		{
+			Sender = new User("", () =>
 			{
 				isModInvokeCount++;
 				return Task.FromResult(true);
-			}));
+			})
+		};
 
 		var commandExecutions = fakeCommands.Select(x =>
 		{
-			message = message.CloneWithMessage(x.Name!);
+			message = message with { Content = x.Name! };
 			return twitchCommandService.Handle(message, CancellationToken.None);
 		});
 

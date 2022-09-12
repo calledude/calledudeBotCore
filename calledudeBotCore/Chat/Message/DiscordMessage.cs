@@ -1,18 +1,6 @@
 ﻿namespace calledudeBot.Chat;
 
-public sealed class DiscordMessage : Message<DiscordMessage>
+public sealed record DiscordMessage : Message
 {
-    public ulong Destination { get; }
-
-    public DiscordMessage(
-        string message,
-        string channel,
-        User sender,
-        ulong destination) : base(message, channel, sender)
-    {
-        Destination = destination;
-    }
-
-    public override DiscordMessage CloneWithMessage(string message)
-        => new(message, Channel!, Sender!, Destination);
+	public ulong Destination { get; init; }
 }
