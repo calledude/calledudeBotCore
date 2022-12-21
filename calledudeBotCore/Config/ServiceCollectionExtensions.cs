@@ -64,7 +64,7 @@ public static class ServiceCollectionExtensions
 				{
 					var cfg = JsonConvert.SerializeObject(new BotConfig(), Formatting.Indented);
 
-					File.WriteAllText(x.Provider.Source.Path, cfg);
+					File.WriteAllText(x.Provider.Source.Path!, cfg);
 					Log.Logger.Fatal("No config file detected. Created one for you with default values, please fill it in.");
 					Log.Logger.Information("Press any key to exit..");
 					Console.ReadKey();
@@ -77,7 +77,9 @@ public static class ServiceCollectionExtensions
 
 		services.Configure<BotConfig>(configuration);
 
-		var twitchConfigs = configuration.GetSection("TwitchBotConfigs").Get<TwitchBotConfig[]>();
+		const string twitchBotConfigSection = "TwitchBotConfigs";
+		var twitchConfigs = configuration.GetSection("TwitchBotConfigs").Get<TwitchBotConfig[]>()
+			?? throw new InvalidOperationException($"Section {twitchBotConfigSection} does not exist in config file.");
 
 		services.AddSingleton<ITwitchBotConfig>(twitchConfigs.First(x => !x.IsUser));
 		services.AddSingleton<ITwitchUserConfig>(twitchConfigs.First(x => x.IsUser));

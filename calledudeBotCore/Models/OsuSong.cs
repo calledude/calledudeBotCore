@@ -6,7 +6,7 @@ namespace calledudeBot.Models;
 public record OsuSong
 {
     [JsonPropertyName("version")]
-    public string BeatmapVersion { get; init; }
-    public string Artist { get; init; }
-    public string Title { get; init; }
+    public required string BeatmapVersion { get; init; }
+    public required string Artist { get; init; }
+    public required string Title { get; init; }
 }

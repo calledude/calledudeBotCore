@@ -12,7 +12,7 @@ public class HelpCommandTests
 	[Fact]
 	public async Task SpecificCommand_DoesNotExist_ErrorResponse()
 	{
-		var (helpCommand, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
+		var (helpCommand, _) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
 		var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent("!doesNotExist");
 
 		var response = await helpCommand.Handle(commandParameter);
@@ -171,7 +171,7 @@ public class HelpCommandTests
 	[Fact]
 	public async Task NonSpecificCommand()
 	{
-		var (helpCommand, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
+		var (helpCommand, _) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
 		var response = await helpCommand.Handle(CommandParameterObjectMother.EmptyWithPrefixedWord);
 
 		Assert.Equal("These are the commands you can use: !help", response);
