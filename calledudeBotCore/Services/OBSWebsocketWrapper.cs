@@ -2,6 +2,7 @@
 using calledudeBot.Utilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Nito.AsyncEx;
 using OBSWebsocketDotNet;
 using OBSWebsocketDotNet.Communication;
 using OBSWebsocketDotNet.Types.Events;
@@ -18,7 +19,7 @@ public interface IOBSWebsocket
 	event EventHandler<ObsDisconnectionInfo> Disconnected;
 	event EventHandler Connected;
 
-	bool TryConnect();
+	Task<bool> TryConnect();
 	void Disconnect();
 }
 
@@ -53,7 +54,7 @@ public class OBSWebsocketWrapper : IOBSWebsocket
 	private readonly ILogger<OBSWebsocketWrapper> _logger;
 	private readonly IAsyncTimer _timer;
 	private readonly OBSWebsocket _obs;
-	private readonly AutoResetEvent _connected;
+	private readonly AsyncAutoResetEvent _connected;
 
 	public OBSWebsocketWrapper(
 		OBSWebsocket obs,
@@ -69,13 +70,13 @@ public class OBSWebsocketWrapper : IOBSWebsocket
 		_obs = obs;
 		_obs.Connected += OnConnected;
 
-		_connected = new AutoResetEvent(false);
+		_connected = new AsyncAutoResetEvent(false);
 
 		_timer = timer;
 		_timer.Interval = 2000;
 	}
 
-	public bool TryConnect()
+	public async Task<bool> TryConnect()
 	{
 		if (_websocketUrl is null || _websocketPort is null)
 		{
@@ -84,7 +85,7 @@ public class OBSWebsocketWrapper : IOBSWebsocket
 		}
 
 		_obs.ConnectAsync($"ws://{_websocketUrl}:{_websocketPort}", null);
-		_connected.WaitOne();
+		await _connected.WaitAsync();
 
 		if (_obs.IsConnected)
 		{

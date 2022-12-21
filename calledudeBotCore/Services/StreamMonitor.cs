@@ -140,15 +140,16 @@ public sealed class StreamMonitor : IStreamMonitor
 		}
 
 		await _processMonitorService.WaitForProcessToStart("obs64", "obs32");
-		TryConnect();
+		await TryConnect();
 	}
 
-	private void TryConnect()
+	private async Task TryConnect()
 	{
 		//Trying 5 times just in case.
-		var connectionFailed = Enumerable.Range(0, 5)
-			.Select(_ => _obs.TryConnect())
-			.All(success => !success);
+		var connectionFailed = await Enumerable.Range(0, 5)
+			.ToAsyncEnumerable()
+			.SelectAwait(async _ => await _obs.TryConnect())
+			.AllAsync(success => !success);
 
 		if (connectionFailed)
 		{
