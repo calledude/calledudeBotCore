@@ -53,6 +53,7 @@ public class BotTests
 
 		var message = new IrcMessage
 		{
+			Content = "",
 			Sender = new User("", () =>
 			{
 				isModInvokeCount++;
@@ -105,7 +106,7 @@ public class BotTests
 			.Returns(async (INotification notification, CancellationToken _) =>
 			{
 				var message = (IrcMessage)notification;
-				await message.Sender.IsModerator();
+				await message.Sender!.IsModerator();
 				isModeratorChecked.Set();
 			});
 
@@ -132,7 +133,7 @@ public class BotTests
 		var mods = await twitch.GetMods();
 		Assert.DoesNotContain(mods, x => x == "calledude");
 		Assert.NotNull(message);
-		Assert.True(await message!.Sender.IsModerator());
+		Assert.True(await message!.Sender!.IsModerator());
 	}
 
 	[Theory]

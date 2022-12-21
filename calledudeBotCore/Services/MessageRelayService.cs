@@ -49,7 +49,7 @@ public sealed class MessageRelayService : INotificationHandler<RelayNotification
 	}
 
 	private bool MessageSenderIsBroadcaster(IrcMessage message)
-		=> _streamerNick.Equals(message.Sender.Name, StringComparison.OrdinalIgnoreCase);
+		=> _streamerNick.Equals(message.Sender?.Name, StringComparison.OrdinalIgnoreCase);
 
 	private async Task TryRelay(RelayNotification<IrcMessage> notification)
 	{
@@ -78,7 +78,7 @@ public sealed class MessageRelayService : INotificationHandler<RelayNotification
 		}
 
 		// The relay request comes from TwitchBot
-		var responseContent = $"{message.Sender.CapitalizeUsername()}: {message.Content}";
+		var responseContent = $"{message.Sender?.CapitalizeUsername()}: {message.Content}";
 		await RelayMessage(notification, responseContent, _steam);
 		await RelayMessage(notification, responseContent, _osu);
 	}

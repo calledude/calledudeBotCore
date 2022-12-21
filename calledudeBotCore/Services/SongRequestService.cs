@@ -61,7 +61,7 @@ public sealed class SongRequestService : INotificationHandler<IrcMessage>
 			var song = osuSongs.Single();
 			var response = notification with
 			{
-				Content = $"{notification.Sender.Name} requested song: [https://osu.ppy.sh/b/{beatmapID} {song.Artist} - {song.Title} [{song.BeatmapVersion}]]"
+				Content = $"{notification.Sender!.Name} requested song: [https://osu.ppy.sh/b/{beatmapID} {song.Artist} - {song.Title} [{song.BeatmapVersion}]]"
 			};
 
 			await _osuBot.SendMessageAsync(response);

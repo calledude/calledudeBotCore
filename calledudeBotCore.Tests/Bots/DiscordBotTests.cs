@@ -137,7 +137,7 @@ public class DiscordBotTests
 
 		Assert.Equal(content, actualMessage!.Content);
 		Assert.Equal($"#{channelName}", actualMessage!.Channel);
-		Assert.Equal($"{username}#{discriminator}", actualMessage!.Sender.Name);
+		Assert.Equal($"{username}#{discriminator}", actualMessage!.Sender!.Name);
 		Assert.Equal(channelId, actualMessage!.Destination);
 
 		_messageDispatcher.Verify(x => x.PublishAsync(It.IsAny<DiscordMessage>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -225,7 +225,7 @@ public class DiscordBotTests
 
 		var channelMock = new Mock<IMessageChannel>();
 
-		var guildPermissions = new GuildPermissions(banMembers: banMembers, kickMembers: kickMembers);
+		var guildPermissions = new GuildPermissions(kickMembers: kickMembers, banMembers: banMembers);
 		var userMock = new Mock<IGuildUser>();
 		userMock.Setup(x => x.GuildPermissions).Returns(guildPermissions);
 
@@ -234,7 +234,7 @@ public class DiscordBotTests
 		messageMock.Setup(x => x.Channel).Returns(channelMock.Object);
 
 		await messageReceivedEventSubscription!.Invoke(messageMock.Object);
-		var isMod = await actualMessage!.Sender.IsModerator();
+		var isMod = await actualMessage!.Sender!.IsModerator();
 
 		Assert.True(isMod);
 	}

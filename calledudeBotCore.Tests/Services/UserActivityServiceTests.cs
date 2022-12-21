@@ -131,6 +131,7 @@ public class UserActivityServiceTests
 		const string userName = "calledude";
 		var notification = new IrcMessage()
 		{
+			Content = "",
 			Sender = UserObjectMother.Create(userName)
 		};
 

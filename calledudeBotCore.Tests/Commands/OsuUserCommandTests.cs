@@ -54,7 +54,7 @@ public class OsuUserCommandTests
     {
         _osuUserServiceMock
             .Setup(x => x.GetOsuUser(It.IsAny<string>()))
-            .ReturnsAsync((OsuUser)null);
+            .ReturnsAsync((OsuUser?)null);
 
         var osuUserCommand = new OsuUserCommand(_osuUserServiceMock.Object, _logger);
 

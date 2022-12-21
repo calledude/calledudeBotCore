@@ -40,5 +40,10 @@ public class CommandParameter<T> : CommandParameter, IRequest<T> where T : IMess
 	}
 
 	public override async Task<bool> SenderIsMod()
-		=> await Message.Sender.IsModerator();
+	{
+		if (Message.Sender is null)
+			return false;
+
+		return await Message.Sender.IsModerator();
+	}
 }

@@ -18,7 +18,7 @@ public class SongRequestServiceTests
         var clientFactory = new Mock<IHttpClientWrapper>();
 
         var options = ConfigObjectMother.Create();
-        var target = new SongRequestService(options, null, null, clientFactory.Object, null);
+        var target = new SongRequestService(options, null!, null!, clientFactory.Object, null!);
 
         await target.Handle(MessageObjectMother.Empty, CancellationToken.None);
         clientFactory.VerifyNoOtherCalls();
@@ -34,8 +34,8 @@ public class SongRequestServiceTests
     [InlineData("http://osu.ppy.sh/beatmapsets/362039#osu/111 play this!", "111", "someUser6", "Artist6", "Title6", "Version6")]
     public async Task FoundSong(string messageContent, string beatmapId, string username, string songArtist, string songTitle, string songVersion)
     {
-        string actualUrl = null;
         var osuSong = new OsuSong(songVersion, songArtist, songTitle);
+        string? actualUrl = null;
 
         var clientFactory = new Mock<IHttpClientWrapper>();
         clientFactory
@@ -43,7 +43,7 @@ public class SongRequestServiceTests
             .ReturnsAsync((true, new[] { osuSong }))
             .Callback((string url) => actualUrl = url);
 
-        string sentMessageContent = null;
+        string? sentMessageContent = null;
         var osu = new Mock<IOsuBot>();
         osu
             .Setup(x => x.SendMessageAsync(It.IsAny<IrcMessage>()))
@@ -51,7 +51,7 @@ public class SongRequestServiceTests
 
         var logger = LoggerObjectMother.NullLoggerFor<SongRequestService>();
         var options = ConfigObjectMother.Create();
-        var target = new SongRequestService(options, null, osu.Object, clientFactory.Object, logger);
+        var target = new SongRequestService(options, null!, osu.Object, clientFactory.Object, logger);
 
         var message = MessageObjectMother.CreateWithContent(messageContent, username);
         await target.Handle(message, CancellationToken.None);
@@ -74,7 +74,7 @@ public class SongRequestServiceTests
 
         var logger = LoggerObjectMother.NullLoggerFor<SongRequestService>();
         var options = ConfigObjectMother.Create();
-        var target = new SongRequestService(options, null, null, clientFactory.Object, logger);
+        var target = new SongRequestService(options, null!, null!, clientFactory.Object, logger);
 
         var message = MessageObjectMother.CreateWithContent("http://osu.ppy.sh/b/12345");
         await target.Handle(message, CancellationToken.None);
@@ -91,14 +91,14 @@ public class SongRequestServiceTests
             .Setup(x => x.GetAsJsonAsync<OsuSong[]>(It.IsAny<string>()))
             .ReturnsAsync((true, null));
 
-        string sentMessageContent = null;
         var twitch = new Mock<IMessageBot<IrcMessage>>();
+        string? sentMessageContent = null;
         twitch
             .Setup(x => x.SendMessageAsync(It.IsAny<IrcMessage>()))
             .Callback((IrcMessage message) => sentMessageContent = message.Content);
 
         var options = ConfigObjectMother.Create();
-        var target = new SongRequestService(options, twitch.Object, null, clientFactory.Object, null);
+        var target = new SongRequestService(options, twitch.Object, null!, clientFactory.Object, null!);
 
         var message = MessageObjectMother.CreateWithContent("http://osu.ppy.sh/b/12345");
         await target.Handle(message, CancellationToken.None);

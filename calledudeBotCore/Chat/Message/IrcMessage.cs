@@ -1,4 +1,6 @@
-﻿namespace calledudeBot.Chat;
+﻿using System;
+
+namespace calledudeBot.Chat;
 
 public sealed record IrcMessage : Message
 {
@@ -6,6 +8,6 @@ public sealed record IrcMessage : Message
 		=> string.Join(" ", buffer[3..])[1..];
 
 	//:calledude!calledude@calledude.tmi.twitch.tv PRIVMSG #calledude :test
-	public static string ParseUser(string buffer)
-		=> buffer[1..buffer.IndexOf('!')];
+	public static string ParseUser(ReadOnlySpan<char> buffer)
+		=> buffer[1..buffer.IndexOf('!')].ToString();
 }
