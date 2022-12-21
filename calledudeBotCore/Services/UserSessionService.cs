@@ -6,7 +6,7 @@ namespace calledudeBot.Services;
 
 public interface IUserSessionService
 {
-	Task<List<UserSessionEntity>> GetUserSessions(string userName);
+	Task<List<UserSessionEntity>> GetUserSessions(string? userName);
 }
 
 public class UserSessionService : IUserSessionService
@@ -18,6 +18,6 @@ public class UserSessionService : IUserSessionService
 		_userSessionRepository = userSessionRepository;
 	}
 
-	public async Task<List<UserSessionEntity>> GetUserSessions(string userName)
+	public async Task<List<UserSessionEntity>> GetUserSessions(string? userName)
 		=> await _userSessionRepository.GetUserSessions(userName);
 }

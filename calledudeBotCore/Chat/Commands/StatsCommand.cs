@@ -23,7 +23,7 @@ public class StatsCommand : SpecialCommand<CommandParameter>
 
     protected override async Task<string> HandleCommand(CommandParameter param)
     {
-        var user = param.Words.FirstOrDefault() ?? param.Message.Sender.Name;
+        var user = param.Words.FirstOrDefault() ?? param.Message.Sender?.Name;
         var userActivity = await _userActivityService.GetUserActivity(user);
 
         if (userActivity is null)

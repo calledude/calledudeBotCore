@@ -10,7 +10,7 @@ namespace calledudeBot.Database.UserSession;
 public interface IUserSessionRepository
 {
 	Task TrackUserSession(UserActivityEntity entity);
-	Task<List<UserSessionEntity>> GetUserSessions(string user);
+	Task<List<UserSessionEntity>> GetUserSessions(string? user);
 }
 
 public class UserSessionRepository : IUserSessionRepository
@@ -38,7 +38,7 @@ public class UserSessionRepository : IUserSessionRepository
 		await _context.SaveChangesAsync();
 	}
 
-	public async Task<List<UserSessionEntity>> GetUserSessions(string user)
+	public async Task<List<UserSessionEntity>> GetUserSessions(string? user)
 		=> await _context
 					.UserSession
 					.Where(x => x.Username == user)

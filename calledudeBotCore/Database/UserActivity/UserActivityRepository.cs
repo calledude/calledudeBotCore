@@ -8,9 +8,9 @@ namespace calledudeBot.Database.UserActivity;
 
 public interface IUserActivityRepository
 {
-	Task<UserActivityEntity?> GetUserActivity(string user);
+	Task<UserActivityEntity?> GetUserActivity(string? user);
 	Task SaveUserActivity(UserParticipationNotification notification, Guid streamSession);
-	Task SaveUserChatActivity(string userName);
+	Task SaveUserChatActivity(string? userName);
 }
 
 public class UserActivityRepository : IUserActivityRepository
@@ -47,13 +47,13 @@ public class UserActivityRepository : IUserActivityRepository
 		await _context.SaveChangesAsync();
 	}
 
-	private async Task<UserActivityEntity?> GetTrackedUserActivity(string userName)
+	private async Task<UserActivityEntity?> GetTrackedUserActivity(string? userName)
 		=> await _context.UserActivities
 				.AsTracking()
 				.Where(x => x.Username == userName)
 				.FirstOrDefaultAsync();
 
-	public async Task SaveUserChatActivity(string userName)
+	public async Task SaveUserChatActivity(string? userName)
 	{
 		var entity = await GetTrackedUserActivity(userName);
 
@@ -65,7 +65,7 @@ public class UserActivityRepository : IUserActivityRepository
 		await _context.SaveChangesAsync();
 	}
 
-	public async Task<UserActivityEntity?> GetUserActivity(string user)
+	public async Task<UserActivityEntity?> GetUserActivity(string? user)
 		=> await _context.UserActivities
 			.AsNoTracking()
 			.Where(x => x.Username == user)
