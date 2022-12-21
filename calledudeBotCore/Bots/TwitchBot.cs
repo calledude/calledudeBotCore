@@ -12,7 +12,11 @@ using System.Threading.Tasks;
 
 namespace calledudeBot.Bots;
 
-public sealed class TwitchBot : TwitchBotBase
+public interface ITwitchBot : IMessageBot<IrcMessage>
+{
+}
+
+public sealed class TwitchBot : TwitchBotBase, ITwitchBot
 {
 	private HashSet<string>? _mods;
 	private DateTime _lastModCheck;

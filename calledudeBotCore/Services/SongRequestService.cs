@@ -22,11 +22,11 @@ public sealed class SongRequestService : INotificationHandler<IrcMessage>
 	private readonly IOsuBot _osuBot;
 	private readonly IHttpClientWrapper _client;
 	private readonly ILogger<SongRequestService> _logger;
-	private readonly IMessageBot<IrcMessage> _twitchBot;
+	private readonly ITwitchBot _twitchBot;
 
 	public SongRequestService(
 		IOptions<BotConfig> options,
-		IMessageBot<IrcMessage> twitchBot,
+		ITwitchBot twitchBot,
 		IOsuBot osuBot,
 		IHttpClientWrapper client,
 		ILogger<SongRequestService> logger)

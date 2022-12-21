@@ -24,7 +24,7 @@ public sealed class OsuUserService : IOsuUserService
 	private OsuUser? _oldOsuData;
 	private readonly IAsyncTimer _checkTimer;
 	private readonly IHttpClientWrapper _client;
-	private readonly IMessageBot<IrcMessage> _twitch;
+	private readonly ITwitchBot _twitch;
 	private readonly ILogger<OsuUserService> _logger;
 	private readonly string _osuAPIToken;
 	private readonly string _osuNick;
@@ -32,7 +32,7 @@ public sealed class OsuUserService : IOsuUserService
 	public OsuUserService(
 		IHttpClientWrapper client,
 		IOptions<BotConfig> options,
-		IMessageBot<IrcMessage> twitchBot,
+		ITwitchBot twitchBot,
 		ILogger<OsuUserService> logger,
 		IAsyncTimer timer)
 	{
@@ -49,7 +49,7 @@ public sealed class OsuUserService : IOsuUserService
 
 	public Task Handle(ReadyNotification notification, CancellationToken cancellationToken)
 	{
-		if (notification.Bot is not TwitchBot)
+		if (notification.Bot is not ITwitchBot)
 			return Task.CompletedTask;
 
 		_checkTimer.Interval = 15000;

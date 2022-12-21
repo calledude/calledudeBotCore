@@ -91,8 +91,8 @@ public class SongRequestServiceTests
             .Setup(x => x.GetAsJsonAsync<OsuSong[]>(It.IsAny<string>()))
             .ReturnsAsync((true, null));
 
-        var twitch = new Mock<IMessageBot<IrcMessage>>();
         string? sentMessageContent = null;
+        var twitch = new Mock<ITwitchBot>();
         twitch
             .Setup(x => x.SendMessageAsync(It.IsAny<IrcMessage>()))
             .Callback((IrcMessage message) => sentMessageContent = message.Content);

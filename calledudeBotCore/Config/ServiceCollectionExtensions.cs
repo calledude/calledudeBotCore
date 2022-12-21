@@ -52,7 +52,8 @@ public static class ServiceCollectionExtensions
 			.AddSingleton<IMessageBot<DiscordMessage>, DiscordBot>()
 			.AddSingleton<ISteamBot, SteamBot>()
 			.AddSingleton<IOsuBot, OsuBot>()
-			.AddSingleton<IMessageBot<IrcMessage>, TwitchBot>();
+			.AddSingleton<ITwitchBot, TwitchBot>()
+			.AddSingleton<IMessageBot<IrcMessage>>(x => x.GetRequiredService<ITwitchBot>());
 
 	public static IServiceCollection AddTwitchConfigs(this IServiceCollection services)
 	{

@@ -110,7 +110,7 @@ public class OsuUserServiceTests
 
 		string? sentMessageContent = null;
 
-		var twitchMock = new Mock<IMessageBot<IrcMessage>>();
+		var twitchMock = new Mock<ITwitchBot>();
 		twitchMock
 			.Setup(x => x.SendMessageAsync(It.IsAny<IrcMessage>()))
 			.Callback((IrcMessage message) => sentMessageContent = message.Content);
@@ -141,7 +141,7 @@ public class OsuUserServiceTests
 	public async Task CheckUserUpdate_RespectsCancellationToken()
 	{
 		var client = new Mock<IHttpClientWrapper>();
-		var twitchMock = new Mock<IMessageBot<IrcMessage>>();
+		var twitchMock = new Mock<ITwitchBot>();
 		var timerMock = new Mock<IAsyncTimer>();
 
 		Func<CancellationToken, Task>? elapsedEventSubscription = null;
@@ -169,7 +169,7 @@ public class OsuUserServiceTests
 			.Setup(x => x.GetAsJsonAsync<OsuUser[]>(It.IsAny<string>()))
 			.ReturnsAsync((false, null));
 
-		var twitchMock = new Mock<IMessageBot<IrcMessage>>();
+		var twitchMock = new Mock<ITwitchBot>();
 		var timerMock = new Mock<IAsyncTimer>();
 
 		Func<CancellationToken, Task>? elapsedEventSubscription = null;

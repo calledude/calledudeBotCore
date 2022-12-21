@@ -47,7 +47,7 @@ public static class Program
 					.AddDatabase()
 					.AddLazyResolution()
 					.AddHostedService(x => x.GetRequiredService<IMessageBot<DiscordMessage>>())
-					.AddHostedService(x => x.GetRequiredService<IMessageBot<IrcMessage>>())
+					.AddHostedService(x => x.GetRequiredService<ITwitchBot>())
 					.AddHostedService(x => x.GetRequiredService<ITwitchUser>())
 					.AddHostedService(x => x.GetRequiredService<IOsuBot>())
 					.AddHostedService(x => x.GetRequiredService<ISteamBot>());
