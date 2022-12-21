@@ -34,8 +34,13 @@ public class SongRequestServiceTests
     [InlineData("http://osu.ppy.sh/beatmapsets/362039#osu/111 play this!", "111", "someUser6", "Artist6", "Title6", "Version6")]
     public async Task FoundSong(string messageContent, string beatmapId, string username, string songArtist, string songTitle, string songVersion)
     {
-        var osuSong = new OsuSong(songVersion, songArtist, songTitle);
         string? actualUrl = null;
+        var osuSong = new OsuSong
+        {
+            BeatmapVersion = songVersion,
+            Artist = songArtist,
+            Title = songTitle,
+        };
 
         var clientFactory = new Mock<IHttpClientWrapper>();
         clientFactory

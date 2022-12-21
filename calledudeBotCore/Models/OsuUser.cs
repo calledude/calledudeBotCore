@@ -1,27 +1,21 @@
-﻿using Newtonsoft.Json;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace calledudeBot.Models;
 
 public record OsuUser
 {
-    [JsonConstructor]
-    public OsuUser(string username, int pp_rank, string level, float pp_raw, float accuracy, int pp_country_rank, List<object> events)
-    {
-        Username = username;
-        Rank = pp_rank;
-        Level = level;
-        PP = pp_raw;
-        Accuracy = accuracy;
-        CountryRank = pp_country_rank;
-        Events = events;
-    }
+    public required string Username { get; init; }
 
-    public string Username { get; init; }
-    public int Rank { get; init; }
-    public string Level { get; init; }
-    public float PP { get; init; }
-    public float Accuracy { get; init; }
-    public int CountryRank { get; init; }
-    public List<object> Events { get; init; }
+    [JsonPropertyName("pp_rank")]
+    public required int Rank { get; init; }
+    public required string Level { get; init; }
+
+    [JsonPropertyName("pp_raw")]
+    public required float PP { get; init; }
+    public required float Accuracy { get; init; }
+
+    [JsonPropertyName("pp_country_rank")]
+    public required int CountryRank { get; init; }
+    public required List<object>? Events { get; init; }
 }

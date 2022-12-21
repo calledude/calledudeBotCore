@@ -12,6 +12,15 @@ public static class OsuUserObjectMother
         float pp = 4141.41f,
         float accuracy = 99.95f,
         int countryRank = 1337,
-        List<object> events = null)
-        => new(username, rank, level, pp, accuracy, countryRank, events);
+        List<object>? events = null)
+        => new()
+        {
+            Username = username,
+            Rank = rank,
+            Level = level,
+            PP = pp,
+            Accuracy = accuracy,
+            CountryRank = countryRank,
+            Events = events
+        };
 }
