@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace calledudeBot.Services;
 
-public interface IOsuUserService : INotificationHandler<ReadyNotification>, IDisposable
+public interface IOsuUserService : INotificationHandler<ReadyNotification>
 {
 	Task<OsuUser?> GetOsuUser(string username);
 }
@@ -44,7 +44,6 @@ public sealed class OsuUserService : IOsuUserService
 		_twitch = twitchBot;
 		_logger = logger;
 		_checkTimer = timer;
-		_checkTimer.Elapsed += CheckUserUpdate;
 	}
 
 	public Task Handle(ReadyNotification notification, CancellationToken cancellationToken)
@@ -53,7 +52,7 @@ public sealed class OsuUserService : IOsuUserService
 			return Task.CompletedTask;
 
 		_checkTimer.Interval = 15000;
-		_checkTimer.Start(cancellationToken);
+		_checkTimer.Start(CheckUserUpdate, cancellationToken);
 		return Task.CompletedTask;
 	}
 
@@ -110,12 +109,5 @@ public sealed class OsuUserService : IOsuUserService
 		}
 
 		_oldOsuData = user;
-	}
-
-	public void Dispose()
-	{
-		_checkTimer.Elapsed -= CheckUserUpdate;
-		_checkTimer.Dispose();
-		_twitch.Dispose();
 	}
 }

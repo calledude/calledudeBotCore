@@ -5,13 +5,12 @@ using System.Threading.Tasks;
 
 namespace calledudeBot.Utilities;
 
-public interface IAsyncTimer : IDisposable
+public interface IAsyncTimer
 {
-	event Func<CancellationToken, Task> Elapsed;
 	int Interval { get; set; }
 
-	Task Start(CancellationToken cancellationToken);
-	void Stop();
+	void Start(Func<CancellationToken, Task> callback, CancellationToken cancellationToken);
+	Task Stop();
 }
 
 public sealed class AsyncTimer : IAsyncTimer
@@ -19,8 +18,9 @@ public sealed class AsyncTimer : IAsyncTimer
 	private readonly CancellationTokenSource _cts;
 	private readonly ILogger<AsyncTimer> _logger;
 	private bool _started;
+	private PeriodicTimer? _periodicTimer;
+	private Task? _workTask;
 
-	public event Func<CancellationToken, Task>? Elapsed;
 	public int Interval { get; set; }
 
 	public AsyncTimer(ILogger<AsyncTimer> logger)
@@ -29,10 +29,10 @@ public sealed class AsyncTimer : IAsyncTimer
 		_logger = logger;
 	}
 
-	public async Task Start(CancellationToken cancellationToken)
+	public void Start(Func<CancellationToken, Task> callback, CancellationToken cancellationToken)
 	{
-		if (Elapsed is null)
-			throw new InvalidOperationException(nameof(Elapsed) + " is null");
+		if (Interval <= 0)
+			throw new ArgumentOutOfRangeException(nameof(Interval));
 
 		if (_started)
 			return;
@@ -40,17 +40,30 @@ public sealed class AsyncTimer : IAsyncTimer
 		_started = true;
 		var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cts.Token);
 
+		_periodicTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(Interval));
+		_workTask = Tick(callback, linkedTokenSource);
+	}
+
+	private async Task Tick(Func<CancellationToken, Task> callback, CancellationTokenSource cancellationTokenSource)
+	{
 		_logger.LogTrace("Starting timer.");
-		while (!linkedTokenSource.IsCancellationRequested)
+		while (await _periodicTimer!.WaitForNextTickAsync(cancellationTokenSource.Token) && !cancellationTokenSource.IsCancellationRequested)
 		{
-			await Elapsed(linkedTokenSource.Token);
-			await Task.Delay(Interval, linkedTokenSource.Token);
+			await callback.Invoke(cancellationTokenSource.Token);
 		}
 
 		_logger.LogTrace("Stopping timer.");
 	}
 
-	public void Stop() => _cts.Cancel();
+	public async Task Stop()
+	{
+		if (_workTask is null || !_started)
+			return;
 
-	public void Dispose() => _cts.Dispose();
+		_cts.Cancel();
+		await _workTask;
+		_cts.Dispose();
+		_workTask.Dispose();
+		_periodicTimer!.Dispose();
+	}
 }

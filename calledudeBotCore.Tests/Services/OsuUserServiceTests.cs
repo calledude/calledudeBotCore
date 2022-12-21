@@ -33,7 +33,7 @@ public class OsuUserServiceTests
 		var target = new OsuUserService(client.Object, _config, null!, _logger, timer.Object);
 		await target.Handle(readyNotification, CancellationToken.None);
 
-		timer.Verify(x => x.Start(It.IsAny<CancellationToken>()), Times.Never);
+		timer.Verify(x => x.Start(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 
 	[Theory]
@@ -116,19 +116,22 @@ public class OsuUserServiceTests
 			.Callback((IrcMessage message) => sentMessageContent = message.Content);
 
 		var timerMock = new Mock<IAsyncTimer>();
-		Func<CancellationToken, Task>? elapsedEventSubscription = null;
+
+		Func<CancellationToken, Task>? callback = null;
 		timerMock
-			.SetupAdd(x => x.Elapsed += It.IsAny<Func<CancellationToken, Task>>())
-			.Callback((Func<CancellationToken, Task> callback) => elapsedEventSubscription = callback);
+			.Setup(x => x.Start(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
+			.Callback((Func<CancellationToken, Task> timerCallback, CancellationToken _) => callback = timerCallback);
 
-		_ = new OsuUserService(client.Object, _config, twitchMock.Object, _logger, timerMock.Object);
+		var osuUserService = new OsuUserService(client.Object, _config, twitchMock.Object, _logger, timerMock.Object);
+		var readyNotification = new ReadyNotification(twitchMock.Object);
+		await osuUserService.Handle(readyNotification, CancellationToken.None);
 
-		Assert.NotNull(elapsedEventSubscription);
+		Assert.NotNull(callback);
 
 		// Invoke twice to consume all the mocked data for GetAsJsonAsync
 		for (var i = 0; i < 2; ++i)
 		{
-			await elapsedEventSubscription!.Invoke(CancellationToken.None);
+			await callback!.Invoke(CancellationToken.None);
 		}
 
 		twitchMock.Verify(x => x.SendMessageAsync(It.IsAny<IrcMessage>()), Times.Exactly(timesCalled));
@@ -144,18 +147,20 @@ public class OsuUserServiceTests
 		var twitchMock = new Mock<ITwitchBot>();
 		var timerMock = new Mock<IAsyncTimer>();
 
-		Func<CancellationToken, Task>? elapsedEventSubscription = null;
+		Func<CancellationToken, Task>? callback = null;
 		timerMock
-			.SetupAdd(x => x.Elapsed += It.IsAny<Func<CancellationToken, Task>>())
-			.Callback((Func<CancellationToken, Task> callback) => elapsedEventSubscription = callback);
+			.Setup(x => x.Start(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
+			.Callback((Func<CancellationToken, Task> timerCallback, CancellationToken _) => callback = timerCallback);
 
-		_ = new OsuUserService(client.Object, _config, twitchMock.Object, _logger, timerMock.Object);
+		var osuUserService = new OsuUserService(client.Object, _config, twitchMock.Object, _logger, timerMock.Object);
+		var readyNotification = new ReadyNotification(twitchMock.Object);
+		await osuUserService.Handle(readyNotification, CancellationToken.None);
 
-		Assert.NotNull(elapsedEventSubscription);
+		Assert.NotNull(callback);
 
 		var cts = new CancellationTokenSource();
 		cts.Cancel();
-		await elapsedEventSubscription!.Invoke(cts.Token);
+		await callback!.Invoke(cts.Token);
 
 		client.VerifyNoOtherCalls();
 		twitchMock.VerifyNoOtherCalls();
@@ -172,16 +177,18 @@ public class OsuUserServiceTests
 		var twitchMock = new Mock<ITwitchBot>();
 		var timerMock = new Mock<IAsyncTimer>();
 
-		Func<CancellationToken, Task>? elapsedEventSubscription = null;
+		Func<CancellationToken, Task>? callback = null;
 		timerMock
-			.SetupAdd(x => x.Elapsed += It.IsAny<Func<CancellationToken, Task>>())
-			.Callback((Func<CancellationToken, Task> callback) => elapsedEventSubscription = callback);
+			.Setup(x => x.Start(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
+			.Callback((Func<CancellationToken, Task> timerCallback, CancellationToken _) => callback = timerCallback);
 
-		_ = new OsuUserService(client.Object, _config, twitchMock.Object, _logger, timerMock.Object);
+		var osuUserService = new OsuUserService(client.Object, _config, twitchMock.Object, _logger, timerMock.Object);
+		var readyNotification = new ReadyNotification(twitchMock.Object);
+		await osuUserService.Handle(readyNotification, CancellationToken.None);
 
-		Assert.NotNull(elapsedEventSubscription);
+		Assert.NotNull(callback);
 
-		await elapsedEventSubscription!.Invoke(CancellationToken.None);
+		await callback!.Invoke(CancellationToken.None);
 
 		client.Verify(x => x.GetAsJsonAsync<OsuUser[]>(It.IsAny<string>()), Times.Once);
 		client.VerifyNoOtherCalls();

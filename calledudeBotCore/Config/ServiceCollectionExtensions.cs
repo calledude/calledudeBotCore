@@ -14,6 +14,7 @@ using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using OBSWebsocketDotNet;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -33,12 +34,18 @@ public static class ServiceCollectionExtensions
 				GatewayIntents = GatewayIntents.GuildPresences | GatewayIntents.GuildMembers | GatewayIntents.Guilds | GatewayIntents.GuildMessages
 			}))
 			.AddHttpClient()
+			.AddSingleton(_ => new OBSWebsocket
+			{
+				WSTimeout = TimeSpan.FromSeconds(5)
+			})
+			.AddSingleton<IProcessMonitorService, ProcessMonitorService>()
+			.AddSingleton<Services.IOBSWebsocket, OBSWebsocketWrapper>()
 			.AddSingleton<IMessageDispatcher, MessageDispatcher>()
 			.AddSingleton<IRelayState, RelayState>()
 			.AddSingleton<IStreamingState, StreamingState>()
 			.AddSingleton<IUserActivityService, UserActivityService>()
+			.AddSingleton<IDiscordSocketClient, DiscordSocketClientWrapper>()
 			.AddTransient<IStreamMonitor, StreamMonitor>()
-			.AddTransient<IDiscordSocketClient, DiscordSocketClientWrapper>()
 			.AddTransient<IUserSessionService, UserSessionService>()
 			.AddTransient<IIrcClient, IrcClient>()
 			.AddTransient<IOsuUserService, OsuUserService>()
