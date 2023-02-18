@@ -15,14 +15,14 @@ public abstract class CommandParameter
 	protected CommandParameter(IEnumerable<string> param)
 	{
 		PrefixedWords = param
-			.TakeWhile(x => x[0] == CommandUtils.PREFIX)
+			.TakeWhile(x => x[0] == CommandUtils.CommandPrefix)
 			.ToList();
 
 		EnclosedWords = param
 			.SkipWhile(x => !x.StartsWith("<"));
 
 		Words = param
-			.SkipWhile(x => x[0] == CommandUtils.PREFIX)
+			.SkipWhile(x => x[0] == CommandUtils.CommandPrefix)
 			.TakeWhile(x => !x.StartsWith("<"));
 	}
 

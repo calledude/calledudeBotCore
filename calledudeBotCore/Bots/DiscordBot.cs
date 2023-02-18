@@ -109,7 +109,4 @@ public sealed class DiscordBot : Bot<DiscordMessage>
 		await _discordClient.Logout();
 		await _discordClient.Stop();
 	}
-
-	protected override void Dispose(bool disposing)
-		=> _discordClient.Dispose();
 }

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace calledudeBot.Bots;
 
-public interface IDiscordSocketClient : IDisposable
+public interface IDiscordSocketClient
 {
 	event Func<LogMessage, Task> Log;
 	event Func<IMessage, Task> MessageReceived;
@@ -63,7 +63,4 @@ public class DiscordSocketClientWrapper : IDiscordSocketClient
 
 	public async Task Stop()
 		=> await _discordClient.StopAsync();
-
-	public void Dispose()
-		=> _discordClient.Dispose();
 }

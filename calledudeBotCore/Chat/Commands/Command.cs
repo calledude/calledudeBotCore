@@ -41,7 +41,7 @@ public class Command
 
     private static bool HasSpecialChars(string str)
     {
-        str = str[0] == CommandUtils.PREFIX ? str[1..] : str;
+        str = str[0] == CommandUtils.CommandPrefix ? str[1..] : str;
         return !str.All(char.IsLetterOrDigit);
     }
 }

@@ -129,8 +129,4 @@ public class SteamBot : Bot<IrcMessage>, ISteamBot
 		_steamClient.Disconnect();
 		return Task.CompletedTask;
 	}
-
-	protected override void Dispose(bool disposing)
-	{
-	}
 }

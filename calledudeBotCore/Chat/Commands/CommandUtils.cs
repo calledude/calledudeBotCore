@@ -4,10 +4,10 @@ namespace calledudeBot.Chat.Commands;
 
 public static class CommandUtils
 {
-	internal const char PREFIX = '!';
+	public const char CommandPrefix = '!';
 
 	public static bool IsCommand(string message)
-		=> message[0] == PREFIX && message.Length > 1;
+		=> message[0] == CommandPrefix && message.Length > 1;
 
 	//Returns the Command object or null depending on if it exists or not.
 	internal static Command? GetExistingCommand(this IDictionary<string, Command> commands, string? cmd)
@@ -31,7 +31,7 @@ public static class CommandUtils
 	}
 
 	internal static string AddPrefix(this string str)
-		=> str[0] == PREFIX ? str : $"{PREFIX}{str}";
+		=> str[0] == CommandPrefix ? str : $"{CommandPrefix}{str}";
 
 	public static void Add(this IDictionary<string, Command> commands, Command command)
 	{
