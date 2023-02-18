@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using System;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -45,9 +46,9 @@ public class OsuUserServiceTests
 		string? actualUrl = null;
 		var client = new Mock<IHttpClientWrapper>();
 		client
-			.Setup(x => x.GetAsJsonAsync<OsuUser[]>(It.IsAny<string>()))
+			.Setup(x => x.GetAsJsonAsync(It.IsAny<string>(), It.IsAny<JsonTypeInfo<OsuUser[]>>()))
 			.ReturnsAsync((success, new OsuUser[] { OsuUserObjectMother.CreateOsuUser() }))
-			.Callback((string url) => actualUrl = url);
+			.Callback((string url, JsonTypeInfo<OsuUser[]> _) => actualUrl = url);
 
 		var target = new OsuUserService(client.Object, _config, null!, _logger, new Mock<IAsyncTimer>().Object);
 		var result = await target.GetOsuUser(username);
@@ -71,7 +72,7 @@ public class OsuUserServiceTests
 		var osuUser = OsuUserObjectMother.CreateOsuUser();
 		var client = new Mock<IHttpClientWrapper>();
 		client
-			.Setup(x => x.GetAsJsonAsync<OsuUser[]>(It.IsAny<string>()))
+			.Setup(x => x.GetAsJsonAsync(It.IsAny<string>(), It.IsAny<JsonTypeInfo<OsuUser[]>>()))
 			.ReturnsAsync((true, new OsuUser[] { osuUser, osuUser }));
 
 		var target = new OsuUserService(client.Object, _config, null!, _logger, new Mock<IAsyncTimer>().Object);
@@ -83,7 +84,7 @@ public class OsuUserServiceTests
 	{
 		var client = new Mock<IHttpClientWrapper>();
 		client
-			.Setup(x => x.GetAsJsonAsync<OsuUser[]>(It.IsAny<string>()))
+			.Setup(x => x.GetAsJsonAsync(It.IsAny<string>(), It.IsAny<JsonTypeInfo<OsuUser[]>>()))
 			.ReturnsAsync((true, null));
 
 		var target = new OsuUserService(client.Object, _config, null!, _logger, new Mock<IAsyncTimer>().Object);
@@ -104,7 +105,7 @@ public class OsuUserServiceTests
 
 		var client = new Mock<IHttpClientWrapper>();
 		client
-			.SetupSequence(x => x.GetAsJsonAsync<OsuUser[]>(It.IsAny<string>()))
+			.SetupSequence(x => x.GetAsJsonAsync(It.IsAny<string>(), It.IsAny<JsonTypeInfo<OsuUser[]>>()))
 			.ReturnsAsync((true, new OsuUser[] { oldOsuUser }))
 			.ReturnsAsync((true, new OsuUser[] { newOsuUser }));
 
@@ -171,7 +172,7 @@ public class OsuUserServiceTests
 	{
 		var client = new Mock<IHttpClientWrapper>();
 		client
-			.Setup(x => x.GetAsJsonAsync<OsuUser[]>(It.IsAny<string>()))
+			.Setup(x => x.GetAsJsonAsync(It.IsAny<string>(), It.IsAny<JsonTypeInfo<OsuUser[]>>()))
 			.ReturnsAsync((false, null));
 
 		var twitchMock = new Mock<ITwitchBot>();
@@ -190,7 +191,7 @@ public class OsuUserServiceTests
 
 		await callback!.Invoke(CancellationToken.None);
 
-		client.Verify(x => x.GetAsJsonAsync<OsuUser[]>(It.IsAny<string>()), Times.Once);
+		client.Verify(x => x.GetAsJsonAsync(It.IsAny<string>(), It.IsAny<JsonTypeInfo<OsuUser[]>>()), Times.Once);
 		client.VerifyNoOtherCalls();
 		twitchMock.VerifyNoOtherCalls();
 	}

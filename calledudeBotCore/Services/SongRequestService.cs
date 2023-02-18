@@ -12,11 +12,11 @@ using System.Threading.Tasks;
 
 namespace calledudeBot.Services;
 
-public sealed class SongRequestService : INotificationHandler<IrcMessage>
+public sealed partial class SongRequestService : INotificationHandler<IrcMessage>
 {
-	private const string SONGREQUESTLINK = "https://osu.ppy.sh/api/get_beatmaps?k={0}&b={1}";
+	private const string _songRequestUrl = "https://osu.ppy.sh/api/get_beatmaps?k={0}&b={1}";
 
-	private static readonly Regex _beatmapRegex = new(@"https?://osu.ppy.sh/(?:b|beatmapsets/.+?)/(?<BeatmapID>\d+)", RegexOptions.Compiled);
+	private static readonly Regex _beatmapRegex = BeatmapRegex();
 
 	private readonly string _osuAPIToken;
 	private readonly IOsuBot _osuBot;
@@ -46,9 +46,9 @@ public sealed class SongRequestService : INotificationHandler<IrcMessage>
 			return;
 
 		var beatmapID = match.Groups["BeatmapID"];
-		var reqLink = string.Format(SONGREQUESTLINK, _osuAPIToken, beatmapID);
+		var reqLink = string.Format(_songRequestUrl, _osuAPIToken, beatmapID);
 
-		var (success, osuSongs) = await _client.GetAsJsonAsync<OsuSong[]>(reqLink);
+		var (success, osuSongs) = await _client.GetAsJsonAsync<OsuSong[]>(reqLink, SerializerContext.CaseInsensitive.OsuSongArray);
 
 		if (!success)
 		{
@@ -72,4 +72,7 @@ public sealed class SongRequestService : INotificationHandler<IrcMessage>
 			await _twitchBot.SendMessageAsync(response);
 		}
 	}
+
+	[GeneratedRegex("https?://osu.ppy.sh/(?:b|beatmapsets/.+?)/(?<BeatmapID>\\d+)", RegexOptions.Compiled)]
+	private static partial Regex BeatmapRegex();
 }

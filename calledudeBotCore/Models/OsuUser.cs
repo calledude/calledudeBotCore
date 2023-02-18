@@ -1,21 +1,23 @@
-﻿using System.Collections.Generic;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace calledudeBot.Models;
 
+[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
 public record OsuUser
 {
-    public required string Username { get; init; }
+	public string Username { get; set; } = null!;
 
-    [JsonPropertyName("pp_rank")]
-    public required int Rank { get; init; }
-    public required string Level { get; init; }
+	[JsonPropertyName("pp_rank")]
+	public int Rank { get; set; }
 
-    [JsonPropertyName("pp_raw")]
-    public required float PP { get; init; }
-    public required float Accuracy { get; init; }
+	public string Level { get; set; } = null!;
 
-    [JsonPropertyName("pp_country_rank")]
-    public required int CountryRank { get; init; }
-    public required List<object>? Events { get; init; }
+	[JsonPropertyName("pp_raw")]
+	public float PP { get; set; }
+
+	[JsonPropertyName("accuracy")]
+	public float Accuracy { get; set; }
+
+	[JsonPropertyName("pp_country_rank")]
+	public int CountryRank { get; set; }
 }

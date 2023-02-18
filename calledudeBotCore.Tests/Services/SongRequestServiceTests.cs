@@ -4,6 +4,7 @@ using calledudeBot.Models;
 using calledudeBot.Services;
 using calledudeBotCore.Tests.ObjectMothers;
 using Moq;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -44,9 +45,9 @@ public class SongRequestServiceTests
 
         var clientFactory = new Mock<IHttpClientWrapper>();
         clientFactory
-            .Setup(x => x.GetAsJsonAsync<OsuSong[]>(It.IsAny<string>()))
+            .Setup(x => x.GetAsJsonAsync(It.IsAny<string>(), It.IsAny<JsonTypeInfo<OsuSong[]>>()))
             .ReturnsAsync((true, new[] { osuSong }))
-            .Callback((string url) => actualUrl = url);
+            .Callback((string url, JsonTypeInfo<OsuSong[]> _) => actualUrl = url);
 
         string? sentMessageContent = null;
         var osu = new Mock<IOsuBot>();
@@ -61,7 +62,7 @@ public class SongRequestServiceTests
         var message = MessageObjectMother.CreateWithContent(messageContent, username);
         await target.Handle(message, CancellationToken.None);
 
-        clientFactory.Verify(x => x.GetAsJsonAsync<OsuSong[]>(It.IsAny<string>()), Times.Once);
+        clientFactory.Verify(x => x.GetAsJsonAsync(It.IsAny<string>(), It.IsAny<JsonTypeInfo<OsuSong[]>>()), Times.Once);
         clientFactory.VerifyNoOtherCalls();
         osu.Verify(x => x.SendMessageAsync(It.IsAny<IrcMessage>()), Times.Once);
         osu.VerifyNoOtherCalls();
@@ -84,7 +85,7 @@ public class SongRequestServiceTests
         var message = MessageObjectMother.CreateWithContent("http://osu.ppy.sh/b/12345");
         await target.Handle(message, CancellationToken.None);
 
-        clientFactory.Verify(x => x.GetAsJsonAsync<OsuSong[]>(It.IsAny<string>()), Times.Once);
+        clientFactory.Verify(x => x.GetAsJsonAsync(It.IsAny<string>(), It.IsAny<JsonTypeInfo<OsuSong[]>>()), Times.Once);
         clientFactory.VerifyNoOtherCalls();
     }
 
@@ -93,7 +94,7 @@ public class SongRequestServiceTests
     {
         var clientFactory = new Mock<IHttpClientWrapper>();
         clientFactory
-            .Setup(x => x.GetAsJsonAsync<OsuSong[]>(It.IsAny<string>()))
+            .Setup(x => x.GetAsJsonAsync(It.IsAny<string>(), It.IsAny<JsonTypeInfo<OsuSong[]>>()))
             .ReturnsAsync((true, null));
 
         string? sentMessageContent = null;
@@ -108,7 +109,7 @@ public class SongRequestServiceTests
         var message = MessageObjectMother.CreateWithContent("http://osu.ppy.sh/b/12345");
         await target.Handle(message, CancellationToken.None);
 
-        clientFactory.Verify(x => x.GetAsJsonAsync<OsuSong[]>(It.IsAny<string>()), Times.Once);
+        clientFactory.Verify(x => x.GetAsJsonAsync(It.IsAny<string>(), It.IsAny<JsonTypeInfo<OsuSong[]>>()), Times.Once);
         clientFactory.VerifyNoOtherCalls();
 
         Assert.Equal("I couldn't find that song, sorry.", sentMessageContent);

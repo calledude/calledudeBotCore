@@ -62,7 +62,7 @@ public sealed class OsuUserService : IOsuUserService
 
 		var requestUrl = string.Format("https://osu.ppy.sh/api/get_user?k={0}&u={1}", _osuAPIToken, user);
 
-		var (success, users) = await _client.GetAsJsonAsync<OsuUser[]>(requestUrl);
+		var (success, users) = await _client.GetAsJsonAsync<OsuUser[]>(requestUrl, SerializerContext.CaseInsensitive.OsuUserArray);
 		if (!success)
 			return null;
 
@@ -89,25 +89,29 @@ public sealed class OsuUserService : IOsuUserService
 
 	private async Task CheckUserUpdate(OsuUser user)
 	{
-		if (_oldOsuData != null && _oldOsuData.Rank != user.Rank && Math.Abs(user.PP - _oldOsuData.PP) >= 0.1)
+		if (_oldOsuData == null || _oldOsuData == user)
 		{
-			var rankDiff = user.Rank - _oldOsuData.Rank;
-			var ppDiff = user.PP - _oldOsuData.PP;
-
-			var formatted = string.Format(CultureInfo.InvariantCulture, "{0:0.00}", Math.Abs(ppDiff));
-			var totalPP = user.PP.ToString(CultureInfo.InvariantCulture);
-
-			var rankMessage = $"{Math.Abs(rankDiff)} ranks (#{user.Rank}).";
-			var ppMessage = $"PP: {(ppDiff < 0 ? "-" : "+")}{formatted}pp ({totalPP}pp)";
-
-			var newRankMessage = new IrcMessage
-			{
-				Content = $"{user.Username} just {(rankDiff < 0 ? "gained" : "lost")} {rankMessage} {ppMessage}"
-			};
-
-			await _twitch.SendMessageAsync(newRankMessage);
+			_oldOsuData = user;
+			return;
 		}
 
-		_oldOsuData = user;
+		if (Math.Abs(user.PP - _oldOsuData.PP) < 0.1)
+			return;
+
+		var rankDiff = user.Rank - _oldOsuData.Rank;
+		var ppDiff = user.PP - _oldOsuData.PP;
+
+		var formatted = string.Format(CultureInfo.InvariantCulture, "{0:0.00}", Math.Abs(ppDiff));
+		var totalPP = user.PP.ToString(CultureInfo.InvariantCulture);
+
+		var rankMessage = $"{Math.Abs(rankDiff)} ranks (#{user.Rank}).";
+		var ppMessage = $"PP: {(ppDiff < 0 ? "-" : "+")}{formatted}pp ({totalPP}pp)";
+
+		var newRankMessage = new IrcMessage
+		{
+			Content = $"{user.Username} just {(rankDiff < 0 ? "gained" : "lost")} {rankMessage} {ppMessage}"
+		};
+
+		await _twitch.SendMessageAsync(newRankMessage);
 	}
 }
