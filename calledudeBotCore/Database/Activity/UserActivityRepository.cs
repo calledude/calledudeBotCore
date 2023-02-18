@@ -4,11 +4,11 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace calledudeBot.Database.UserActivity;
+namespace calledudeBot.Database.Activity;
 
 public interface IUserActivityRepository
 {
-	Task<UserActivityEntity?> GetUserActivity(string? user);
+	Task<UserActivity?> GetUserActivity(string? user);
 	Task SaveUserActivity(UserParticipationNotification notification, Guid streamSession);
 	Task SaveUserChatActivity(string? userName);
 }
@@ -28,7 +28,7 @@ public class UserActivityRepository : IUserActivityRepository
 
 		if (entity == default)
 		{
-			entity = new UserActivityEntity
+			entity = new UserActivity
 			{
 				LastJoinDate = notification.When,
 				Username = notification.User.Name,
@@ -47,7 +47,7 @@ public class UserActivityRepository : IUserActivityRepository
 		await _context.SaveChangesAsync();
 	}
 
-	private async Task<UserActivityEntity?> GetTrackedUserActivity(string? userName)
+	private async Task<UserActivity?> GetTrackedUserActivity(string? userName)
 		=> await _context.UserActivities
 				.AsTracking()
 				.Where(x => x.Username == userName)
@@ -65,7 +65,7 @@ public class UserActivityRepository : IUserActivityRepository
 		await _context.SaveChangesAsync();
 	}
 
-	public async Task<UserActivityEntity?> GetUserActivity(string? user)
+	public async Task<UserActivity?> GetUserActivity(string? user)
 		=> await _context.UserActivities
 			.AsNoTracking()
 			.Where(x => x.Username == user)

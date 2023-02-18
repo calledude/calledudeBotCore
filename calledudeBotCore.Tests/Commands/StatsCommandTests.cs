@@ -1,6 +1,6 @@
 ﻿using calledudeBot.Chat.Commands;
-using calledudeBot.Database.UserActivity;
-using calledudeBot.Database.UserSession;
+using calledudeBot.Database.Activity;
+using calledudeBot.Database.Session;
 using calledudeBot.Services;
 using calledudeBotCore.Tests.ObjectMothers;
 using Moq;
@@ -16,40 +16,40 @@ public class StatsCommandTests
     private readonly Mock<IUserSessionService> _userSessionService;
     private readonly Mock<IUserActivityService> _userActivityService;
 
-    private readonly List<UserSessionEntity> _userSessionsSingle;
-    private readonly UserActivityEntity _userActivity;
-    private readonly List<UserSessionEntity> _userSessionsMultiple;
+    private readonly List<UserSession> _userSessionsSingle;
+    private readonly UserActivity _userActivity;
+    private readonly List<UserSession> _userSessionsMultiple;
 
-    private readonly UserSessionEntity _userSession1;
+    private readonly UserSession _userSession1;
 
-    private readonly UserSessionEntity _userSession2;
+    private readonly UserSession _userSession2;
 
     public StatsCommandTests()
     {
         _userSessionService = new Mock<IUserSessionService>();
         _userActivityService = new Mock<IUserActivityService>();
-        _userSession1 = new UserSessionEntity
+        _userSession1 = new UserSession
         {
             WatchTime = TimeSpan.FromSeconds(4)
         };
 
-        _userSession2 = new UserSessionEntity
+        _userSession2 = new UserSession
         {
             WatchTime = TimeSpan.FromSeconds(19)
         };
 
-        _userSessionsSingle = new List<UserSessionEntity>
+        _userSessionsSingle = new List<UserSession>
         {
             _userSession1
         };
 
-        _userSessionsMultiple = new List<UserSessionEntity>
+        _userSessionsMultiple = new List<UserSession>
         {
             _userSession1,
             _userSession2
         };
 
-        _userActivity = new UserActivityEntity
+        _userActivity = new UserActivity
         {
             TimesSeen = 5,
             MessagesSent = 3

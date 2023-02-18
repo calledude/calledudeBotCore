@@ -1,5 +1,6 @@
-﻿using calledudeBot.Database.UserActivity;
-using calledudeBot.Database.UserSession;
+﻿using calledudeBot.Database.Activity;
+using calledudeBot.Database.Compiled;
+using calledudeBot.Database.Session;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -16,10 +17,11 @@ public class DatabaseContext : DbContext
 		_loggerFactory = loggerFactory;
 	}
 
-	public virtual DbSet<UserActivityEntity> UserActivities => Set<UserActivityEntity>();
-	public virtual DbSet<UserSessionEntity> UserSession => Set<UserSessionEntity>();
+	public virtual DbSet<UserActivity> UserActivities => Set<UserActivity>();
+	public virtual DbSet<UserSession> UserSession => Set<UserSession>();
 
 	protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 		=> optionsBuilder.UseSqlite("Data Source=calledudeBot.db")
-						.UseLoggerFactory(_loggerFactory);
+						.UseLoggerFactory(_loggerFactory)
+						.UseModel(DatabaseContextModel.Instance);
 }

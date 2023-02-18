@@ -1,16 +1,15 @@
-﻿using calledudeBot.Database.UserActivity;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace calledudeBot.Database.UserSession;
+namespace calledudeBot.Database.Session;
 
 public interface IUserSessionRepository
 {
-	Task TrackUserSession(UserActivityEntity entity);
-	Task<List<UserSessionEntity>> GetUserSessions(string? user);
+	Task TrackUserSession(Activity.UserActivity entity);
+	Task<List<UserSession>> GetUserSessions(string? user);
 }
 
 public class UserSessionRepository : IUserSessionRepository
@@ -22,11 +21,11 @@ public class UserSessionRepository : IUserSessionRepository
 		_context = context;
 	}
 
-	public async Task TrackUserSession(UserActivityEntity entity)
+	public async Task TrackUserSession(Activity.UserActivity entity)
 	{
 		var endTime = DateTime.Now;
 
-		var session = new UserSessionEntity
+		var session = new UserSession
 		{
 			Username = entity.Username,
 			StartTime = entity.LastJoinDate,
@@ -38,7 +37,7 @@ public class UserSessionRepository : IUserSessionRepository
 		await _context.SaveChangesAsync();
 	}
 
-	public async Task<List<UserSessionEntity>> GetUserSessions(string? user)
+	public async Task<List<UserSession>> GetUserSessions(string? user)
 		=> await _context
 					.UserSession
 					.Where(x => x.Username == user)

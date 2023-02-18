@@ -1,4 +1,4 @@
-﻿using calledudeBot.Database.UserSession;
+﻿using calledudeBot.Database.Session;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -6,7 +6,7 @@ namespace calledudeBot.Services;
 
 public interface IUserSessionService
 {
-	Task<List<UserSessionEntity>> GetUserSessions(string? userName);
+	Task<List<UserSession>> GetUserSessions(string? userName);
 }
 
 public class UserSessionService : IUserSessionService
@@ -18,6 +18,6 @@ public class UserSessionService : IUserSessionService
 		_userSessionRepository = userSessionRepository;
 	}
 
-	public async Task<List<UserSessionEntity>> GetUserSessions(string? userName)
+	public async Task<List<UserSession>> GetUserSessions(string? userName)
 		=> await _userSessionRepository.GetUserSessions(userName);
 }

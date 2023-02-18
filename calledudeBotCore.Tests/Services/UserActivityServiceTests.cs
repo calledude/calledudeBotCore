@@ -1,6 +1,6 @@
 ﻿using calledudeBot.Chat;
-using calledudeBot.Database.UserActivity;
-using calledudeBot.Database.UserSession;
+using calledudeBot.Database.Activity;
+using calledudeBot.Database.Session;
 using calledudeBot.Models;
 using calledudeBot.Services;
 using calledudeBotCore.Tests.ObjectMothers;
@@ -71,7 +71,7 @@ public class UserActivityServiceTests
 
 		_userActivityRepository
 			.Setup(x => x.GetUserActivity(It.IsAny<string>()))
-			.ReturnsAsync(new UserActivityEntity
+			.ReturnsAsync(new UserActivity
 			{
 				LastJoinDate = now,
 				StreamSession = Guid.Empty
@@ -102,7 +102,7 @@ public class UserActivityServiceTests
 
 		_userActivityRepository
 			.Setup(x => x.GetUserActivity(It.IsAny<string>()))
-			.ReturnsAsync(new UserActivityEntity
+			.ReturnsAsync(new UserActivity
 			{
 				LastJoinDate = now,
 				StreamSession = streamSession
@@ -118,7 +118,7 @@ public class UserActivityServiceTests
 		_streamingState.VerifyGet(x => x.SessionId, Times.Exactly(2));
 		_streamingState.VerifyNoOtherCalls();
 
-		_userSessionRepository.Verify(x => x.TrackUserSession(It.IsAny<UserActivityEntity>()), Times.Once);
+		_userSessionRepository.Verify(x => x.TrackUserSession(It.IsAny<UserActivity>()), Times.Once);
 		_userSessionRepository.VerifyNoOtherCalls();
 
 		_userActivityRepository.Verify(x => x.GetUserActivity(It.IsAny<string>()), Times.Once);

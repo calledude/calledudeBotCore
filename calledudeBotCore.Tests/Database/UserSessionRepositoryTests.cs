@@ -1,6 +1,6 @@
 ﻿using calledudeBot.Database;
-using calledudeBot.Database.UserActivity;
-using calledudeBot.Database.UserSession;
+using calledudeBot.Database.Activity;
+using calledudeBot.Database.Session;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Moq.EntityFrameworkCore;
@@ -27,16 +27,16 @@ public class UserSessionRepositoryTests
 	[Fact]
 	public async Task UserSessionIsTrackedProperly()
 	{
-		UserSessionEntity? actualEntity = null;
-		var dbSet = new Mock<DbSet<UserSessionEntity>>();
+		UserSession? actualEntity = null;
+		var dbSet = new Mock<DbSet<UserSession>>();
 		dbSet
-			.Setup(x => x.AddAsync(It.IsAny<UserSessionEntity>(), It.IsAny<CancellationToken>()))
-			.Callback((UserSessionEntity entity, CancellationToken _) => actualEntity = entity);
+			.Setup(x => x.AddAsync(It.IsAny<UserSession>(), It.IsAny<CancellationToken>()))
+			.Callback((UserSession entity, CancellationToken _) => actualEntity = entity);
 
-		_dbContext.Setup(x => x.UserSession).ReturnsDbSet(Enumerable.Empty<UserSessionEntity>(), dbSet);
+		_dbContext.Setup(x => x.UserSession).ReturnsDbSet(Enumerable.Empty<UserSession>(), dbSet);
 
 		var now = DateTime.Now;
-		var userActivityEntity = new UserActivityEntity
+		var userActivityEntity = new UserActivity
 		{
 			Username = "calledude",
 			LastJoinDate = now.AddMinutes(-5)
@@ -44,7 +44,7 @@ public class UserSessionRepositoryTests
 
 		await _userSessionRepository.TrackUserSession(userActivityEntity);
 
-		dbSet.Verify(x => x.AddAsync(It.IsAny<UserSessionEntity>(), It.IsAny<CancellationToken>()), Times.Once);
+		dbSet.Verify(x => x.AddAsync(It.IsAny<UserSession>(), It.IsAny<CancellationToken>()), Times.Once);
 		_dbContext.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 
 		Assert.NotNull(actualEntity);
@@ -58,28 +58,28 @@ public class UserSessionRepositoryTests
 	public async Task GetUserSession_ReturnsCorrectUser()
 	{
 		const string userName = "calledude";
-		var userSession1 = new UserSessionEntity
+		var userSession1 = new UserSession
 		{
 			Username = userName,
 		};
-		var userSession2 = new UserSessionEntity
+		var userSession2 = new UserSession
 		{
 			Username = userName,
 		};
 
-		var userSession3 = new UserSessionEntity
+		var userSession3 = new UserSession
 		{
 			Username = "someOtherUser"
 		};
 
-		var userActivities = new List<UserSessionEntity>
+		var userActivities = new List<UserSession>
 		{
 			userSession1,
 			userSession2,
 			userSession3
 		};
 
-		var dbSet = new Mock<DbSet<UserSessionEntity>>();
+		var dbSet = new Mock<DbSet<UserSession>>();
 		_dbContext.Setup(x => x.UserSession).ReturnsDbSet(userActivities, dbSet);
 
 		var actualUserSessions = await _userSessionRepository.GetUserSessions(userName);

@@ -2,10 +2,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace calledudeBot.Database.UserActivity;
+namespace calledudeBot.Database.Activity;
 
 [Table("UserActivities")]
-public class UserActivityEntity
+public class UserActivity
 {
 	[Required]
 	[Key]

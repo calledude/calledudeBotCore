@@ -1,6 +1,6 @@
 ﻿using calledudeBot.Chat;
-using calledudeBot.Database.UserActivity;
-using calledudeBot.Database.UserSession;
+using calledudeBot.Database.Activity;
+using calledudeBot.Database.Session;
 using calledudeBot.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -11,7 +11,7 @@ namespace calledudeBot.Services;
 
 public interface IUserActivityService : INotificationHandler<UserParticipationNotification>, INotificationHandler<IrcMessage>
 {
-	Task<UserActivityEntity?> GetUserActivity(string? userName);
+	Task<UserActivity?> GetUserActivity(string? userName);
 }
 
 public class UserActivityService : IUserActivityService
@@ -51,7 +51,7 @@ public class UserActivityService : IUserActivityService
 	private async Task HandleJoin(UserParticipationNotification notification)
 		=> await _userActivityRepository.SaveUserActivity(notification, _streamingState.SessionId);
 
-	public async Task<UserActivityEntity?> GetUserActivity(string? userName)
+	public async Task<UserActivity?> GetUserActivity(string? userName)
 		=> await _userActivityRepository.GetUserActivity(userName);
 
 	private async Task HandleLeave(UserParticipationNotification notification)

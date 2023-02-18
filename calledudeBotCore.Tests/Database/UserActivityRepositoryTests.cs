@@ -1,5 +1,5 @@
 ﻿using calledudeBot.Database;
-using calledudeBot.Database.UserActivity;
+using calledudeBot.Database.Activity;
 using calledudeBot.Models;
 using calledudeBotCore.Tests.ObjectMothers;
 using Microsoft.EntityFrameworkCore;
@@ -28,13 +28,13 @@ public class UserActivityRepositoryTests
 	[Fact]
 	public async Task SavingNewUserActivity()
 	{
-		var userActivities = Enumerable.Empty<UserActivityEntity>();
+		var userActivities = Enumerable.Empty<UserActivity>();
 
-		UserActivityEntity? actualEntity = null;
-		var dbSet = new Mock<DbSet<UserActivityEntity>>();
+		UserActivity? actualEntity = null;
+		var dbSet = new Mock<DbSet<UserActivity>>();
 		dbSet
-			.Setup(x => x.AddAsync(It.IsAny<UserActivityEntity>(), It.IsAny<CancellationToken>()))
-			.Callback((UserActivityEntity entity, CancellationToken _) => actualEntity = entity);
+			.Setup(x => x.AddAsync(It.IsAny<UserActivity>(), It.IsAny<CancellationToken>()))
+			.Callback((UserActivity entity, CancellationToken _) => actualEntity = entity);
 
 		_dbContext.Setup(x => x.UserActivities).ReturnsDbSet(userActivities, dbSet);
 
@@ -65,7 +65,7 @@ public class UserActivityRepositoryTests
 		const int oldMessagesSent = 2;
 		var oldStreamSessionId = Guid.NewGuid();
 		const int oldTimesSeen = 4;
-		var existingUserActivity = new UserActivityEntity
+		var existingUserActivity = new UserActivity
 		{
 			LastJoinDate = oldLastJoinDate,
 			Username = userName,
@@ -74,12 +74,12 @@ public class UserActivityRepositoryTests
 			TimesSeen = oldTimesSeen
 		};
 
-		var userActivities = new List<UserActivityEntity>
+		var userActivities = new List<UserActivity>
 		{
 			existingUserActivity
 		};
 
-		var dbSet = new Mock<DbSet<UserActivityEntity>>();
+		var dbSet = new Mock<DbSet<UserActivity>>();
 		_dbContext.Setup(x => x.UserActivities).ReturnsDbSet(userActivities, dbSet);
 
 		var userParticipationNotification = new UserParticipationNotification(UserObjectMother.Create(userName), ParticipationType.Leave)
@@ -102,9 +102,9 @@ public class UserActivityRepositoryTests
 	[Fact]
 	public async Task SaveUserChatActivity_NullUser()
 	{
-		var userActivities = Enumerable.Empty<UserActivityEntity>();
+		var userActivities = Enumerable.Empty<UserActivity>();
 
-		var dbSet = new Mock<DbSet<UserActivityEntity>>();
+		var dbSet = new Mock<DbSet<UserActivity>>();
 		_dbContext.Setup(x => x.UserActivities).ReturnsDbSet(userActivities, dbSet);
 
 		await _userActivityRepository.SaveUserChatActivity("someUsername");
@@ -120,7 +120,7 @@ public class UserActivityRepositoryTests
 		const int oldMessagesSent = 2;
 		var oldStreamSessionId = Guid.NewGuid();
 		const int oldTimesSeen = 4;
-		var existingUserActivity = new UserActivityEntity
+		var existingUserActivity = new UserActivity
 		{
 			LastJoinDate = oldLastJoinDate,
 			Username = userName,
@@ -129,12 +129,12 @@ public class UserActivityRepositoryTests
 			TimesSeen = oldTimesSeen
 		};
 
-		var userActivities = new List<UserActivityEntity>
+		var userActivities = new List<UserActivity>
 		{
 			existingUserActivity
 		};
 
-		var dbSet = new Mock<DbSet<UserActivityEntity>>();
+		var dbSet = new Mock<DbSet<UserActivity>>();
 		_dbContext.Setup(x => x.UserActivities).ReturnsDbSet(userActivities, dbSet);
 
 		await _userActivityRepository.SaveUserChatActivity(userName);
@@ -152,23 +152,23 @@ public class UserActivityRepositoryTests
 	public async Task GetUserActivity_ReturnsCorrectUser()
 	{
 		const string userName = "calledude";
-		var userActivity1 = new UserActivityEntity
+		var userActivity1 = new UserActivity
 		{
 			Username = userName,
 		};
 
-		var userActivity2 = new UserActivityEntity
+		var userActivity2 = new UserActivity
 		{
 			Username = "someOtherUser"
 		};
 
-		var userActivities = new List<UserActivityEntity>
+		var userActivities = new List<UserActivity>
 		{
 			userActivity1,
 			userActivity2
 		};
 
-		var dbSet = new Mock<DbSet<UserActivityEntity>>();
+		var dbSet = new Mock<DbSet<UserActivity>>();
 		_dbContext.Setup(x => x.UserActivities).ReturnsDbSet(userActivities, dbSet);
 
 		var actualUserActivity = await _userActivityRepository.GetUserActivity(userName);

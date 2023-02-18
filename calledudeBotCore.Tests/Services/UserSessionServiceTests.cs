@@ -1,4 +1,4 @@
-﻿using calledudeBot.Database.UserSession;
+﻿using calledudeBot.Database.Session;
 using calledudeBot.Services;
 using Moq;
 using System.Threading.Tasks;
