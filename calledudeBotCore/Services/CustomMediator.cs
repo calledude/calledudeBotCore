@@ -9,8 +9,8 @@ namespace calledudeBot.Services;
 
 public class CustomMediator : Mediator
 {
-    public CustomMediator(ServiceFactory serviceFactory) : base(serviceFactory) { }
+	public CustomMediator(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
-    protected override async Task PublishCore(IEnumerable<Func<INotification, CancellationToken, Task>> allHandlers, INotification notification, CancellationToken cancellationToken)
-        => await Task.WhenAll(allHandlers.Select(handler => handler(notification, cancellationToken)));
+	protected override async Task PublishCore(IEnumerable<NotificationHandlerExecutor> handlerExecutors, INotification notification, CancellationToken cancellationToken)
+		=> await Task.WhenAll(handlerExecutors.Select(handler => handler.HandlerCallback(notification, cancellationToken)));
 }

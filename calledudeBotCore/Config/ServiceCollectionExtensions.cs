@@ -10,7 +10,6 @@ using calledudeBot.Services;
 using calledudeBot.Utilities;
 using Discord;
 using Discord.WebSocket;
-using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -28,7 +27,11 @@ public static class ServiceCollectionExtensions
 {
 	public static IServiceCollection AddServices(this IServiceCollection services)
 		=> services
-			.AddMediatR(x => x.Using<CustomMediator>(), Assembly.GetExecutingAssembly())
+			.AddMediatR(x =>
+			{
+				x.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+				x.MediatorImplementationType = typeof(CustomMediator);
+			})
 			.AddSingleton(_ => new DiscordSocketClient(new DiscordSocketConfig
 			{
 				GatewayIntents = GatewayIntents.GuildPresences | GatewayIntents.GuildMembers | GatewayIntents.Guilds | GatewayIntents.GuildMessages
