@@ -122,10 +122,8 @@ public class DiscordBotTests
 		channelMock.Setup(x => x.Id).Returns(channelId);
 
 		const string username = "calledude";
-		const string discriminator = "1337";
 		var userMock = new Mock<IGuildUser>();
 		userMock.Setup(x => x.Username).Returns(username);
-		userMock.Setup(x => x.Discriminator).Returns(discriminator);
 
 		const string content = "Hello! :D";
 		var messageMock = new Mock<IUserMessage>();
@@ -137,7 +135,7 @@ public class DiscordBotTests
 
 		Assert.Equal(content, actualMessage!.Content);
 		Assert.Equal($"#{channelName}", actualMessage!.Channel);
-		Assert.Equal($"{username}#{discriminator}", actualMessage!.Sender!.Name);
+		Assert.Equal(username, actualMessage!.Sender!.Name);
 		Assert.Equal(channelId, actualMessage!.Destination);
 
 		_messageDispatcher.Verify(x => x.PublishAsync(It.IsAny<DiscordMessage>(), It.IsAny<CancellationToken>()), Times.Once);

@@ -88,7 +88,7 @@ public sealed class DiscordBot : Bot<DiscordMessage>
 		{
 			Content = message.Content,
 			Channel = $"#{message.Channel.Name}",
-			Sender = new User($"{user.Username}#{user.Discriminator}", IsMod(user)),
+			Sender = new User(user.Username, IsMod(user)),
 			Destination = message.Channel.Id
 		};
 

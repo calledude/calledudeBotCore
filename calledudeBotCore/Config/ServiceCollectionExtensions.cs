@@ -34,7 +34,7 @@ public static class ServiceCollectionExtensions
 			})
 			.AddSingleton(_ => new DiscordSocketClient(new DiscordSocketConfig
 			{
-				GatewayIntents = GatewayIntents.GuildPresences | GatewayIntents.GuildMembers | GatewayIntents.Guilds | GatewayIntents.GuildMessages
+				GatewayIntents = GatewayIntents.GuildMembers | GatewayIntents.Guilds | GatewayIntents.GuildMessages | GatewayIntents.MessageContent
 			}))
 			.AddHttpClient()
 			.AddSingleton(_ => new OBSWebsocket
