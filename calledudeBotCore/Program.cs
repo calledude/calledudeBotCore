@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace calledudeBot;
@@ -23,14 +24,23 @@ public static class Program
 		var host = CreateHostBuilder().Build();
 
 		var services = host.Services;
-		await services
-			.GetRequiredService<DatabaseContext>()
-			.Database.MigrateAsync();
 
-		Log.Logger.Information("Migrations applied");
+		var loggerFactory = services.GetRequiredService<ILoggerFactory>();
+		var logger = loggerFactory.CreateLogger(typeof(Program));
+
+		var database = services
+			.GetRequiredService<DatabaseContext>().Database;
+
+		var pendingMigrations = await database.GetPendingMigrationsAsync();
+
+		if (pendingMigrations.Any())
+		{
+			await database.MigrateAsync();
+			logger.LogInformation("{migrationCount} Migration(s) applied", pendingMigrations.Count());
+		}
 
 		var commandContainer = services.GetRequiredService<ICommandContainer>();
-		Log.Logger.Information($"Done. Loaded {commandContainer.Commands.Count} commands.");
+		logger.LogInformation("Done. Loaded {numberOfCommands} commands.", commandContainer.Commands.Count);
 
 		await host.RunAsync();
 	}
@@ -56,13 +66,12 @@ public static class Program
 			{
 				logging.ClearProviders();
 				var logger = new LoggerConfiguration()
-					.WriteTo.Console(LogEventLevel.Verbose, outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3} {SourceContext}] {Message:lj}{NewLine}{Exception}")
-					.MinimumLevel.Verbose()
+					.WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3} {SourceContext}] {Message:lj}{NewLine}{Exception}")
+					.MinimumLevel.Is(LogEventLevel.Verbose)
 					.MinimumLevel.Override("Microsoft", LogEventLevel.Information)
 					.MinimumLevel.Override("System.Net.Http", LogEventLevel.Warning)
 					.Enrich.FromLogContext()
 					.CreateLogger();
 				logging.AddSerilog(logger);
-				logging.SetMinimumLevel(LogLevel.Debug);
 			});
 }
