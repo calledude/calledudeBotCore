@@ -1,7 +1,7 @@
 ﻿using calledudeBot.Services;
+using calledudeBotCore.Tests.ObjectMothers;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
 using System.Threading;
@@ -19,7 +19,7 @@ public class MessageDispatcherTests
 
 	public MessageDispatcherTests()
 	{
-		_logger = new Logger<MessageDispatcher>(NullLoggerFactory.Instance);
+		_logger = LoggerObjectMother.NullLoggerFor<MessageDispatcher>();
 		_notification = new Mock<INotification>().Object;
 
 		_throwingHandler = new Mock<INotificationHandler<INotification>>();
@@ -34,13 +34,16 @@ public class MessageDispatcherTests
 	[Fact]
 	public async Task Publish_Throws_AllActionsAreExecuted()
 	{
-		var notificationHandlers = new[]
-		{
-			_throwingHandler.Object,
-			_normalHandler.Object
-		};
+		var serviceProviderMock = new Mock<IServiceProvider>();
+		serviceProviderMock
+			.Setup(x => x.GetService(It.IsAny<Type>())) // This is stupid
+			.Returns(new[]
+			{
+				_throwingHandler.Object,
+				_normalHandler.Object
+			});
 
-		var mediator = new CustomMediator(_ => notificationHandlers);
+		var mediator = new CustomMediator(serviceProviderMock.Object);
 
 		var dispatcher = new MessageDispatcher(_logger, mediator);
 
@@ -53,12 +56,15 @@ public class MessageDispatcherTests
 	[Fact]
 	public async Task Publish_NeverThrows()
 	{
-		var notificationHandlers = new[]
-		{
-			_throwingHandler.Object
-		};
+		var serviceProviderMock = new Mock<IServiceProvider>();
+		serviceProviderMock
+			.Setup(x => x.GetService(It.IsAny<Type>()))
+			.Returns(new[]
+			{
+				_throwingHandler.Object,
+			});
 
-		var mediator = new CustomMediator(_ => notificationHandlers);
+		var mediator = new CustomMediator(serviceProviderMock.Object);
 
 		var dispatcher = new MessageDispatcher(_logger, mediator);
 
@@ -71,12 +77,15 @@ public class MessageDispatcherTests
 	[Fact]
 	public async Task Publish_WithNormalHandler_Works()
 	{
-		var notificationHandlers = new[]
-		{
-			_normalHandler.Object
-		};
+		var serviceProviderMock = new Mock<IServiceProvider>();
+		serviceProviderMock
+			.Setup(x => x.GetService(It.IsAny<Type>()))
+			.Returns(new[]
+			{
+				_normalHandler.Object,
+			});
 
-		var mediator = new CustomMediator(_ => notificationHandlers);
+		var mediator = new CustomMediator(serviceProviderMock.Object);
 
 		var dispatcher = new MessageDispatcher(_logger, mediator);
 
