@@ -47,9 +47,17 @@ public sealed class AsyncTimer : IAsyncTimer
 	private async Task Tick(Func<CancellationToken, Task> callback, CancellationTokenSource cancellationTokenSource)
 	{
 		_logger.LogTrace("Starting timer.");
-		while (await _periodicTimer!.WaitForNextTickAsync(cancellationTokenSource.Token) && !cancellationTokenSource.IsCancellationRequested)
+
+		try
 		{
-			await callback.Invoke(cancellationTokenSource.Token);
+			while (await _periodicTimer!.WaitForNextTickAsync(cancellationTokenSource.Token) && !cancellationTokenSource.IsCancellationRequested)
+			{
+				await callback.Invoke(cancellationTokenSource.Token);
+			}
+		}
+		catch (OperationCanceledException)
+		{
+			_logger.LogTrace("CancellationToken was cancelled.");
 		}
 
 		_logger.LogTrace("Stopping timer.");
