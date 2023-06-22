@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Nito.AsyncEx;
 using OBSWebsocketDotNet;
 using OBSWebsocketDotNet.Communication;
+using OBSWebsocketDotNet.Types;
 using OBSWebsocketDotNet.Types.Events;
 using System;
 using System.Threading;
@@ -14,22 +15,17 @@ namespace calledudeBot.Services;
 
 public interface IOBSWebsocket
 {
-	//event StreamStatusCallback StreamStatus;
+	event EventHandler<OutputStatus> StreamStatus;
 	event EventHandler<StreamStateChangedEventArgs> StreamingStateChanged;
 	event EventHandler<ObsDisconnectionInfo> Disconnected;
-	event EventHandler Connected;
 
 	Task<bool> TryConnect();
-	void Disconnect();
+	Task Disconnect();
 }
 
 public class OBSWebsocketWrapper : IOBSWebsocket
 {
-	//public event StreamStatusCallback StreamStatus
-	//{
-	//	add => _obs.StreamStatus += value;
-	//	remove => _obs.StreamStatus -= value;
-	//}
+	public event EventHandler<OutputStatus>? StreamStatus;
 
 	public event EventHandler<StreamStateChangedEventArgs> StreamingStateChanged
 	{
@@ -41,12 +37,6 @@ public class OBSWebsocketWrapper : IOBSWebsocket
 	{
 		add => _obs.Disconnected += value;
 		remove => _obs.Disconnected -= value;
-	}
-
-	public event EventHandler Connected
-	{
-		add => _obs.Connected += value;
-		remove => _obs.Connected -= value;
 	}
 
 	private readonly string? _websocketUrl;
@@ -85,14 +75,18 @@ public class OBSWebsocketWrapper : IOBSWebsocket
 		}
 
 		_obs.ConnectAsync($"ws://{_websocketUrl}:{_websocketPort}", null);
-		await _connected.WaitAsync();
+		var timeoutTask = Task.Delay(1000);
+		var connectionTask = _connected.WaitAsync();
 
-		if (_obs.IsConnected)
+		var completedTask = await Task.WhenAny(timeoutTask, connectionTask);
+		if (completedTask == timeoutTask)
 		{
-			//_obs.wsConnection.Log.Output = static (_, __) => { };
+			_logger.LogWarning("Attempt to connect to OBS timed out.");
+			return false;
 		}
 
 		_timer.Start(CheckStreamStatus, CancellationToken.None);
+
 		return _obs.IsConnected;
 	}
 
@@ -100,10 +94,18 @@ public class OBSWebsocketWrapper : IOBSWebsocket
 
 	private Task CheckStreamStatus(CancellationToken arg)
 	{
+		if (!_obs.IsConnected)
+			return Task.CompletedTask;
+
 		var status = _obs.GetStreamStatus();
+		StreamStatus?.Invoke(this, status);
 
 		return Task.CompletedTask;
 	}
 
-	public void Disconnect() => _obs.Disconnect();
+	public async Task Disconnect()
+	{
+		await _timer.Stop();
+		_obs.Disconnect();
+	}
 }

@@ -28,7 +28,7 @@ public class HttpClientWrapper : IHttpClientWrapper
 		var client = _clientFactory.CreateClient();
 		try
 		{
-			return (true, await client.GetFromJsonAsync<T>(url, typeInfo));
+			return (true, await client.GetFromJsonAsync(url, typeInfo));
 		}
 		catch (Exception ex)
 		{

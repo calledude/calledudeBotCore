@@ -27,10 +27,13 @@ public class ProcessMonitorService : IProcessMonitorService
 	{
 		_processes = processNames;
 
+		_logger.LogInformation("Waiting for {processes} to start", string.Join(", ", _processes));
 		while (!GetProcesses().Any())
 		{
 			await Task.Delay(2000);
 		}
+
+		_logger.LogInformation("Found process.");
 	}
 
 	public async Task WaitForProcessesToQuit()

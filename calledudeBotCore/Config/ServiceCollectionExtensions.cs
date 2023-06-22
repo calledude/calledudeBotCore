@@ -43,6 +43,7 @@ public static class ServiceCollectionExtensions
 			})
 			.AddSingleton<IProcessMonitorService, ProcessMonitorService>()
 			.AddSingleton<Services.IOBSWebsocket, OBSWebsocketWrapper>()
+			.AddSingleton<IDiscordUserWatcher, DiscordUserWatcher>()
 			.AddSingleton<IMessageDispatcher, MessageDispatcher>()
 			.AddSingleton<IRelayState, RelayState>()
 			.AddSingleton<IStreamingState, StreamingState>()
