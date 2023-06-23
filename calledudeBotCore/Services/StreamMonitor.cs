@@ -122,7 +122,7 @@ public sealed class StreamMonitor : IStreamMonitor
 		if (!await _discordUserWatcher.TryWaitForUserStreamToStart())
 			return;
 
-		_logger.LogInformation("We goin bruh");
+		_logger.LogInformation("Stream started.");
 	}
 
 	private async Task<bool> TryConnect()

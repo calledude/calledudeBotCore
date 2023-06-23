@@ -38,7 +38,6 @@
 		<PackageReference Include="Serilog.Extensions.Logging" Version="7.0.0" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
 		<PackageReference Include="SteamKit2" Version="2.4.1" />
-		<PackageReference Include="websocketsharp.core" Version="1.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>

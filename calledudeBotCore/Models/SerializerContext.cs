@@ -12,5 +12,4 @@ public partial class SerializerContext : JsonSerializerContext
 	{
 		PropertyNameCaseInsensitive = true
 	});
-
 }
