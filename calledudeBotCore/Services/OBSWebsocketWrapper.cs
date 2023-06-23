@@ -63,7 +63,6 @@ public class OBSWebsocketWrapper : IOBSWebsocket
 		_connected = new AsyncAutoResetEvent(false);
 
 		_timer = timer;
-		_timer.Interval = 2000;
 	}
 
 	public async Task<bool> TryConnect()
@@ -85,7 +84,7 @@ public class OBSWebsocketWrapper : IOBSWebsocket
 			return false;
 		}
 
-		_timer.Start(CheckStreamStatus, CancellationToken.None);
+		_timer.Start(CheckStreamStatus, 2000, CancellationToken.None);
 
 		return _obs.IsConnected;
 	}

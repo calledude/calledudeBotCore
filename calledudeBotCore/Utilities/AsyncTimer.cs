@@ -7,9 +7,7 @@ namespace calledudeBot.Utilities;
 
 public interface IAsyncTimer
 {
-	int Interval { get; set; }
-
-	void Start(Func<CancellationToken, Task> callback, CancellationToken cancellationToken);
+	void Start(Func<CancellationToken, Task> callback, int intervalInMs, CancellationToken cancellationToken);
 	Task Stop();
 }
 
@@ -21,18 +19,16 @@ public sealed class AsyncTimer : IAsyncTimer
 	private PeriodicTimer? _periodicTimer;
 	private Task? _workTask;
 
-	public int Interval { get; set; }
-
 	public AsyncTimer(ILogger<AsyncTimer> logger)
 	{
 		_cts = new CancellationTokenSource();
 		_logger = logger;
 	}
 
-	public void Start(Func<CancellationToken, Task> callback, CancellationToken cancellationToken)
+	public void Start(Func<CancellationToken, Task> callback, int intervalInMs, CancellationToken cancellationToken)
 	{
-		if (Interval <= 0)
-			throw new ArgumentOutOfRangeException(nameof(Interval));
+		if (intervalInMs <= 0)
+			throw new ArgumentOutOfRangeException(nameof(intervalInMs));
 
 		if (_started)
 			return;
@@ -40,7 +36,7 @@ public sealed class AsyncTimer : IAsyncTimer
 		_started = true;
 		var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cts.Token);
 
-		_periodicTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(Interval));
+		_periodicTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(intervalInMs));
 		_workTask = Tick(callback, linkedTokenSource);
 	}
 

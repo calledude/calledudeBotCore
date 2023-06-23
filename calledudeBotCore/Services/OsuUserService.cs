@@ -51,8 +51,7 @@ public sealed class OsuUserService : IOsuUserService
 		if (notification.Bot is not ITwitchBot)
 			return Task.CompletedTask;
 
-		_checkTimer.Interval = 15000;
-		_checkTimer.Start(CheckUserUpdate, cancellationToken);
+		_checkTimer.Start(CheckUserUpdate, 15000, cancellationToken);
 		return Task.CompletedTask;
 	}
 

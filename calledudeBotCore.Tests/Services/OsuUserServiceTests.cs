@@ -34,7 +34,7 @@ public class OsuUserServiceTests
 		var target = new OsuUserService(client.Object, _config, null!, _logger, timer.Object);
 		await target.Handle(readyNotification, CancellationToken.None);
 
-		timer.Verify(x => x.Start(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()), Times.Never);
+		timer.Verify(x => x.Start(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 
 	[Theory]
@@ -120,8 +120,8 @@ public class OsuUserServiceTests
 
 		Func<CancellationToken, Task>? callback = null;
 		timerMock
-			.Setup(x => x.Start(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
-			.Callback((Func<CancellationToken, Task> timerCallback, CancellationToken _) => callback = timerCallback);
+			.Setup(x => x.Start(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+			.Callback((Func<CancellationToken, Task> timerCallback, int _, CancellationToken __) => callback = timerCallback);
 
 		var osuUserService = new OsuUserService(client.Object, _config, twitchMock.Object, _logger, timerMock.Object);
 		var readyNotification = new ReadyNotification(twitchMock.Object);
@@ -150,8 +150,8 @@ public class OsuUserServiceTests
 
 		Func<CancellationToken, Task>? callback = null;
 		timerMock
-			.Setup(x => x.Start(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
-			.Callback((Func<CancellationToken, Task> timerCallback, CancellationToken _) => callback = timerCallback);
+			.Setup(x => x.Start(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+			.Callback((Func<CancellationToken, Task> timerCallback, int _, CancellationToken __) => callback = timerCallback);
 
 		var osuUserService = new OsuUserService(client.Object, _config, twitchMock.Object, _logger, timerMock.Object);
 		var readyNotification = new ReadyNotification(twitchMock.Object);
@@ -180,8 +180,8 @@ public class OsuUserServiceTests
 
 		Func<CancellationToken, Task>? callback = null;
 		timerMock
-			.Setup(x => x.Start(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
-			.Callback((Func<CancellationToken, Task> timerCallback, CancellationToken _) => callback = timerCallback);
+			.Setup(x => x.Start(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+			.Callback((Func<CancellationToken, Task> timerCallback, int _, CancellationToken __) => callback = timerCallback);
 
 		var osuUserService = new OsuUserService(client.Object, _config, twitchMock.Object, _logger, timerMock.Object);
 		var readyNotification = new ReadyNotification(twitchMock.Object);

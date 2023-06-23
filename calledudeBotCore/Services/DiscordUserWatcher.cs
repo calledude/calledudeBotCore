@@ -41,7 +41,6 @@ public class DiscordUserWatcher : IDiscordUserWatcher
 		_streamingState = streamingState;
 
 		_timer = timer;
-		_timer.Interval = 2000;
 
 		var config = options.Value;
 		_announceChannelID = config.AnnounceChannelId;
@@ -68,7 +67,7 @@ public class DiscordUserWatcher : IDiscordUserWatcher
 
 		_logger.LogInformation("Checking discord status for user {discordUserName}#{discriminator}..", streamer.Username, streamer.Discriminator);
 
-		_timer.Start(async (_) => await WatchUser(streamer, announceChannel), CancellationToken.None);
+		_timer.Start(async (_) => await WatchUser(streamer, announceChannel), 2000, CancellationToken.None);
 
 		await _streamStarted.WaitAsync();
 		await _timer.Stop();
