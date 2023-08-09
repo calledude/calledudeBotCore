@@ -18,6 +18,7 @@ public sealed class DeleteCommand : SpecialCommand<CommandParameter>
 		_commandContainer = commandContainer;
 	}
 
+	// TODO: Make "alternate" a subcommand instead?
 	protected override Task<string> HandleCommand(CommandParameter param)
 	{
 		var response = "You ok there bud? Try again.";

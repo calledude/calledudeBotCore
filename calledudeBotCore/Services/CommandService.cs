@@ -27,7 +27,7 @@ public class CommandService<T> : INotificationHandler<T>
 	public async Task Handle(T notification, CancellationToken cancellationToken)
 	{
 		var contentSplit = notification.Content.Split();
-		if (!CommandUtils.IsCommand(contentSplit[0]))
+		if (!contentSplit[0].IsCommand())
 			return;
 
 		var param = new CommandParameter<T>(contentSplit, notification);

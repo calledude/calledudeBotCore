@@ -38,7 +38,7 @@ public sealed class MessageRelayService : INotificationHandler<RelayNotification
 
 	public async Task Handle(RelayNotification<IrcMessage> notification, CancellationToken cancellationToken)
 	{
-		if (CommandUtils.IsCommand(notification.Message.Content))
+		if (notification.Message.Content.IsCommand())
 			return;
 
 		//Only relay messages that aren't from the streamer

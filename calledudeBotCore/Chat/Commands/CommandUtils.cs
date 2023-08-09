@@ -6,7 +6,7 @@ public static class CommandUtils
 {
 	public const char CommandPrefix = '!';
 
-	public static bool IsCommand(string message)
+	public static bool IsCommand(this string message)
 		=> message[0] == CommandPrefix && message.Length > 1;
 
 	//Returns the Command object or null depending on if it exists or not.
