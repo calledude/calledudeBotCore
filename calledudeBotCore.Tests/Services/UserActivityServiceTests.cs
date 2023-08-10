@@ -5,8 +5,9 @@ using calledudeBot.Models;
 using calledudeBot.Services;
 using calledudeBotCore.Tests.ObjectMothers;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -15,129 +16,125 @@ namespace calledudeBotCore.Tests.Services;
 
 public class UserActivityServiceTests
 {
-	private readonly UserActivityService _userActivityService;
-	private readonly Mock<IStreamingState> _streamingState;
-	private readonly Mock<IUserActivityRepository> _userActivityRepository;
-	private readonly Mock<IUserSessionRepository> _userSessionRepository;
-	private static readonly Logger<UserActivityService> _logger = LoggerObjectMother.NullLoggerFor<UserActivityService>();
+    private readonly UserActivityService _userActivityService;
+    private readonly IStreamingState _streamingState;
+    private readonly IUserActivityRepository _userActivityRepository;
+    private readonly IUserSessionRepository _userSessionRepository;
+    private static readonly Logger<UserActivityService> _logger = LoggerObjectMother.NullLoggerFor<UserActivityService>();
 
-	public UserActivityServiceTests()
-	{
-		_streamingState = new Mock<IStreamingState>();
-		_userActivityRepository = new Mock<IUserActivityRepository>();
-		_userSessionRepository = new Mock<IUserSessionRepository>();
-		_userActivityService = new UserActivityService(_logger, _userActivityRepository.Object, _userSessionRepository.Object, _streamingState.Object);
-	}
+    public UserActivityServiceTests()
+    {
+        _streamingState = Substitute.For<IStreamingState>();
+        _userActivityRepository = Substitute.For<IUserActivityRepository>();
+        _userSessionRepository = Substitute.For<IUserSessionRepository>();
+        _userActivityService = new UserActivityService(_logger, _userActivityRepository, _userSessionRepository, _streamingState);
+    }
 
-	[Fact]
-	public async Task ParticipationType_Join_CallsSaveUserActivity()
-	{
-		var userParticipationNotification = new UserParticipationNotification(UserObjectMother.Empty, ParticipationType.Join);
-		var sessionId = Guid.NewGuid();
+    [Fact]
+    public async Task ParticipationType_Join_CallsSaveUserActivity()
+    {
+        var userParticipationNotification = new UserParticipationNotification(UserObjectMother.Empty, ParticipationType.Join);
+        var sessionId = Guid.NewGuid();
 
-		_streamingState
-			.SetupGet(x => x.SessionId)
-			.Returns(sessionId);
+        _streamingState.SessionId.Returns(sessionId);
 
-		await _userActivityService.Handle(userParticipationNotification, CancellationToken.None);
+        await _userActivityService.Handle(userParticipationNotification, CancellationToken.None);
 
-		_streamingState.VerifyGet(x => x.SessionId, Times.Once);
-		_streamingState.VerifyNoOtherCalls();
-		_userSessionRepository.VerifyNoOtherCalls();
+        _ = _streamingState.Received(1).SessionId;
+        Assert.Single(_streamingState.ReceivedCalls());
+        Assert.Empty(_userSessionRepository.ReceivedCalls());
 
-		_userActivityRepository.Verify(x => x.SaveUserActivity(userParticipationNotification, sessionId), Times.Once);
-		_userActivityRepository.VerifyNoOtherCalls();
-	}
+        await _userActivityRepository.Received(1).SaveUserActivity(userParticipationNotification, sessionId);
+        Assert.Single(_userActivityRepository.ReceivedCalls());
+    }
 
-	[Fact]
-	public async Task ParticipationType_Leave_NullUser_Bails()
-	{
-		var userParticipationNotification = new UserParticipationNotification(UserObjectMother.Empty, ParticipationType.Leave);
+    [Fact]
+    public async Task ParticipationType_Leave_NullUser_Bails()
+    {
+        var userParticipationNotification = new UserParticipationNotification(UserObjectMother.Empty, ParticipationType.Leave);
 
-		await _userActivityService.Handle(userParticipationNotification, CancellationToken.None);
+        await _userActivityService.Handle(userParticipationNotification, CancellationToken.None);
 
-		_streamingState.VerifyGet(x => x.SessionId, Times.Once);
-		_streamingState.VerifyNoOtherCalls();
+        _ = _streamingState.Received(1).SessionId;
+        Assert.Single(_streamingState.ReceivedCalls());
+        Assert.Empty(_userSessionRepository.ReceivedCalls());
 
-		_userActivityRepository.Verify(x => x.GetUserActivity(It.IsAny<string>()), Times.Once);
-		_userSessionRepository.VerifyNoOtherCalls();
-		_userActivityRepository.VerifyNoOtherCalls();
-	}
+        await _userActivityRepository.Received(1).GetUserActivity(Arg.Any<string>());
+        Assert.Single(_userActivityRepository.ReceivedCalls());
+    }
 
-	[Fact]
-	public async Task ParticipationType_Leave_Invalid_TrackingPoint()
-	{
-		var now = DateTime.Now;
+    [Fact]
+    public async Task ParticipationType_Leave_Invalid_TrackingPoint()
+    {
+        var now = DateTime.Now;
 
-		_userActivityRepository
-			.Setup(x => x.GetUserActivity(It.IsAny<string>()))
-			.ReturnsAsync(new UserActivity
-			{
-				LastJoinDate = now,
-				StreamSession = Guid.Empty
-			});
+        _userActivityRepository.GetUserActivity(Arg.Any<string>())
+            .Returns(new UserActivity
+            {
+                LastJoinDate = now,
+                StreamSession = Guid.Empty
+            });
 
-		_streamingState.SetupGet(x => x.StreamStarted).Returns(now.AddMinutes(5));
-		_streamingState.SetupGet(x => x.SessionId).Returns(Guid.NewGuid());
+        _streamingState.StreamStarted.Returns(now.AddMinutes(5));
+        _streamingState.SessionId.Returns(Guid.NewGuid());
 
-		var userParticipationNotification = new UserParticipationNotification(UserObjectMother.Empty, ParticipationType.Leave);
+        var userParticipationNotification = new UserParticipationNotification(UserObjectMother.Empty, ParticipationType.Leave);
 
-		await _userActivityService.Handle(userParticipationNotification, CancellationToken.None);
+        await _userActivityService.Handle(userParticipationNotification, CancellationToken.None);
 
-		_streamingState.VerifyGet(x => x.SessionId, Times.Exactly(2));
-		_streamingState.VerifyGet(x => x.StreamStarted, Times.Once);
-		_streamingState.VerifyNoOtherCalls();
+        _ = _streamingState.Received(2).SessionId;
+        _ = _streamingState.Received(1).StreamStarted;
+        Assert.Equal(3, _streamingState.ReceivedCalls().Count());
 
-		_userSessionRepository.VerifyNoOtherCalls();
+        Assert.Empty(_userSessionRepository.ReceivedCalls());
 
-		_userActivityRepository.Verify(x => x.GetUserActivity(It.IsAny<string>()), Times.Once);
-		_userActivityRepository.VerifyNoOtherCalls();
-	}
+        await _userActivityRepository.Received(1).GetUserActivity(Arg.Any<string>());
+        Assert.Single(_userActivityRepository.ReceivedCalls());
+    }
 
-	[Fact]
-	public async Task ParticipationType_Leave_Valid_SessionIsTracked()
-	{
-		var now = DateTime.Now;
-		var streamSession = Guid.NewGuid();
+    [Fact]
+    public async Task ParticipationType_Leave_Valid_SessionIsTracked()
+    {
+        var now = DateTime.Now;
+        var streamSession = Guid.NewGuid();
 
-		_userActivityRepository
-			.Setup(x => x.GetUserActivity(It.IsAny<string>()))
-			.ReturnsAsync(new UserActivity
-			{
-				LastJoinDate = now,
-				StreamSession = streamSession
-			});
+        _userActivityRepository.GetUserActivity(Arg.Any<string>())
+            .Returns(new UserActivity
+            {
+                LastJoinDate = now,
+                StreamSession = streamSession
+            });
 
-		_streamingState.SetupGet(x => x.StreamStarted).Returns(now.AddMinutes(-5));
-		_streamingState.SetupGet(x => x.SessionId).Returns(streamSession);
+        _streamingState.StreamStarted.Returns(now.AddMinutes(-5));
+        _streamingState.SessionId.Returns(streamSession);
 
-		var userParticipationNotification = new UserParticipationNotification(UserObjectMother.Empty, ParticipationType.Leave);
+        var userParticipationNotification = new UserParticipationNotification(UserObjectMother.Empty, ParticipationType.Leave);
 
-		await _userActivityService.Handle(userParticipationNotification, CancellationToken.None);
+        await _userActivityService.Handle(userParticipationNotification, CancellationToken.None);
 
-		_streamingState.VerifyGet(x => x.SessionId, Times.Exactly(2));
-		_streamingState.VerifyNoOtherCalls();
+        _ = _streamingState.Received(2).SessionId;
+        Assert.Equal(2, _streamingState.ReceivedCalls().Count());
 
-		_userSessionRepository.Verify(x => x.TrackUserSession(It.IsAny<UserActivity>()), Times.Once);
-		_userSessionRepository.VerifyNoOtherCalls();
+        await _userSessionRepository.Received(1).TrackUserSession(Arg.Any<UserActivity>());
+        Assert.Single(_userSessionRepository.ReceivedCalls());
 
-		_userActivityRepository.Verify(x => x.GetUserActivity(It.IsAny<string>()), Times.Once);
-		_userActivityRepository.VerifyNoOtherCalls();
-	}
+        await _userActivityRepository.Received(1).GetUserActivity(Arg.Any<string>());
+        Assert.Single(_userSessionRepository.ReceivedCalls());
+    }
 
-	[Fact]
-	public async Task UserChatActivity_IsSaved()
-	{
-		const string userName = "calledude";
-		var notification = new IrcMessage()
-		{
-			Content = "",
-			Sender = UserObjectMother.Create(userName)
-		};
+    [Fact]
+    public async Task UserChatActivity_IsSaved()
+    {
+        const string userName = "calledude";
+        var notification = new IrcMessage()
+        {
+            Content = "",
+            Sender = UserObjectMother.Create(userName)
+        };
 
-		await _userActivityService.Handle(notification, CancellationToken.None);
+        await _userActivityService.Handle(notification, CancellationToken.None);
 
-		_userActivityRepository.Verify(x => x.SaveUserChatActivity(userName), Times.Once);
-		_userActivityRepository.VerifyNoOtherCalls();
-	}
+        await _userActivityRepository.Received(1).SaveUserChatActivity(userName);
+        Assert.Single(_userActivityRepository.ReceivedCalls());
+    }
 }

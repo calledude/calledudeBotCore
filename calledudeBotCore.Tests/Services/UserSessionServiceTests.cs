@@ -1,6 +1,6 @@
 ﻿using calledudeBot.Database.Session;
 using calledudeBot.Services;
-using Moq;
+using NSubstitute;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -8,22 +8,22 @@ namespace calledudeBotCore.Tests.Services;
 
 public class UserSessionServiceTests
 {
-	private readonly Mock<IUserSessionRepository> _userSessionRepository;
-	private readonly UserSessionService _userSessionService;
+    private readonly IUserSessionRepository _userSessionRepository;
+    private readonly UserSessionService _userSessionService;
 
-	public UserSessionServiceTests()
-	{
-		_userSessionRepository = new Mock<IUserSessionRepository>();
-		_userSessionService = new UserSessionService(_userSessionRepository.Object);
-	}
+    public UserSessionServiceTests()
+    {
+        _userSessionRepository = Substitute.For<IUserSessionRepository>();
+        _userSessionService = new UserSessionService(_userSessionRepository);
+    }
 
-	[Fact]
-	public async Task GetUserSession_Calls_Repository()
-	{
-		const string username = "calledude";
-		await _userSessionService.GetUserSessions(username);
+    [Fact]
+    public async Task GetUserSession_Calls_Repository()
+    {
+        const string username = "calledude";
+        await _userSessionService.GetUserSessions(username);
 
-		_userSessionRepository.Verify(x => x.GetUserSessions(username), Times.Once);
-		_userSessionRepository.VerifyNoOtherCalls();
-	}
+        await _userSessionRepository.Received(1).GetUserSessions(username);
+        Assert.Single(_userSessionRepository.ReceivedCalls());
+    }
 }

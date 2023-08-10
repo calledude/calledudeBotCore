@@ -2,9 +2,8 @@
 using calledudeBot.Database.Activity;
 using calledudeBot.Models;
 using calledudeBotCore.Tests.ObjectMothers;
-using Microsoft.EntityFrameworkCore;
-using Moq;
-using Moq.EntityFrameworkCore;
+using MockQueryable.NSubstitute;
+using NSubstitute;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,163 +15,162 @@ namespace calledudeBotCore.Tests.Database;
 
 public class UserActivityRepositoryTests
 {
-	private readonly Mock<DatabaseContext> _dbContext;
-	private readonly UserActivityRepository _userActivityRepository;
+    private readonly DatabaseContext _dbContext;
+    private readonly UserActivityRepository _userActivityRepository;
 
-	public UserActivityRepositoryTests()
-	{
-		_dbContext = new Mock<DatabaseContext>();
-		_userActivityRepository = new UserActivityRepository(_dbContext.Object);
-	}
+    public UserActivityRepositoryTests()
+    {
+        _dbContext = Substitute.For<DatabaseContext>();
+        _userActivityRepository = new UserActivityRepository(_dbContext);
+    }
 
-	[Fact]
-	public async Task SavingNewUserActivity()
-	{
-		var userActivities = Enumerable.Empty<UserActivity>();
+    [Fact]
+    public async Task SavingNewUserActivity()
+    {
+        var userActivities = Enumerable.Empty<UserActivity>();
 
-		UserActivity? actualEntity = null;
-		var dbSet = new Mock<DbSet<UserActivity>>();
-		dbSet
-			.Setup(x => x.AddAsync(It.IsAny<UserActivity>(), It.IsAny<CancellationToken>()))
-			.Callback((UserActivity entity, CancellationToken _) => actualEntity = entity);
+        UserActivity? actualEntity = null;
 
-		_dbContext.Setup(x => x.UserActivities).ReturnsDbSet(userActivities, dbSet);
+        var dbSet = userActivities.AsQueryable().BuildMockDbSet();
+        await dbSet.AddAsync(Arg.Do<UserActivity>(x => actualEntity = x), Arg.Any<CancellationToken>());
 
-		var now = DateTime.Now;
-		const string userName = "calledude";
-		var userParticipationNotification = new UserParticipationNotification(UserObjectMother.Create(userName), ParticipationType.Leave)
-		{
-			When = now
-		};
+        _dbContext.UserActivities.Returns(dbSet);
 
-		var streamSessionId = Guid.NewGuid();
-		await _userActivityRepository.SaveUserActivity(userParticipationNotification, streamSessionId);
+        var now = DateTime.Now;
+        const string userName = "calledude";
+        var userParticipationNotification = new UserParticipationNotification(UserObjectMother.Create(userName), ParticipationType.Leave)
+        {
+            When = now
+        };
 
-		Assert.NotNull(actualEntity);
-		Assert.Equal(now, actualEntity!.LastJoinDate);
-		Assert.Equal(userName, actualEntity.Username);
-		Assert.Equal(1, actualEntity.TimesSeen);
-		Assert.Equal(streamSessionId, actualEntity.StreamSession);
+        var streamSessionId = Guid.NewGuid();
+        await _userActivityRepository.SaveUserActivity(userParticipationNotification, streamSessionId);
 
-		_dbContext.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-	}
+        Assert.NotNull(actualEntity);
+        Assert.Equal(now, actualEntity!.LastJoinDate);
+        Assert.Equal(userName, actualEntity.Username);
+        Assert.Equal(1, actualEntity.TimesSeen);
+        Assert.Equal(streamSessionId, actualEntity.StreamSession);
 
-	[Fact]
-	public async Task UpdatingExistingUserActivity()
-	{
-		var oldLastJoinDate = DateTime.Now;
-		const string userName = "calledude";
-		const int oldMessagesSent = 2;
-		var oldStreamSessionId = Guid.NewGuid();
-		const int oldTimesSeen = 4;
-		var existingUserActivity = new UserActivity
-		{
-			LastJoinDate = oldLastJoinDate,
-			Username = userName,
-			MessagesSent = oldMessagesSent,
-			StreamSession = oldStreamSessionId,
-			TimesSeen = oldTimesSeen
-		};
+        await _dbContext.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
 
-		var userActivities = new List<UserActivity>
-		{
-			existingUserActivity
-		};
+    [Fact]
+    public async Task UpdatingExistingUserActivity()
+    {
+        var oldLastJoinDate = DateTime.Now;
+        const string userName = "calledude";
+        const int oldMessagesSent = 2;
+        var oldStreamSessionId = Guid.NewGuid();
+        const int oldTimesSeen = 4;
+        var existingUserActivity = new UserActivity
+        {
+            LastJoinDate = oldLastJoinDate,
+            Username = userName,
+            MessagesSent = oldMessagesSent,
+            StreamSession = oldStreamSessionId,
+            TimesSeen = oldTimesSeen
+        };
 
-		var dbSet = new Mock<DbSet<UserActivity>>();
-		_dbContext.Setup(x => x.UserActivities).ReturnsDbSet(userActivities, dbSet);
+        var userActivities = new List<UserActivity>
+        {
+            existingUserActivity
+        };
 
-		var userParticipationNotification = new UserParticipationNotification(UserObjectMother.Create(userName), ParticipationType.Leave)
-		{
-			When = DateTime.Now.AddHours(-2)
-		};
+        var dbSet = userActivities.AsQueryable().BuildMockDbSet();
+        _dbContext.UserActivities.Returns(dbSet);
 
-		await _userActivityRepository.SaveUserActivity(userParticipationNotification, Guid.NewGuid());
+        var userParticipationNotification = new UserParticipationNotification(UserObjectMother.Create(userName), ParticipationType.Leave)
+        {
+            When = DateTime.Now.AddHours(-2)
+        };
 
-		dbSet.Verify(x => x.Update(existingUserActivity), Times.Once);
-		_dbContext.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        await _userActivityRepository.SaveUserActivity(userParticipationNotification, Guid.NewGuid());
 
-		Assert.Equal(oldTimesSeen + 1, existingUserActivity.TimesSeen);
-		Assert.Equal(oldLastJoinDate, existingUserActivity.LastJoinDate);
-		Assert.Equal(userName, existingUserActivity.Username);
-		Assert.Equal(oldStreamSessionId, existingUserActivity.StreamSession);
-		Assert.Equal(oldMessagesSent, existingUserActivity.MessagesSent);
-	}
+        dbSet.Received(1).Update(existingUserActivity);
+        await _dbContext.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
 
-	[Fact]
-	public async Task SaveUserChatActivity_NullUser()
-	{
-		var userActivities = Enumerable.Empty<UserActivity>();
+        Assert.Equal(oldTimesSeen + 1, existingUserActivity.TimesSeen);
+        Assert.Equal(oldLastJoinDate, existingUserActivity.LastJoinDate);
+        Assert.Equal(userName, existingUserActivity.Username);
+        Assert.Equal(oldStreamSessionId, existingUserActivity.StreamSession);
+        Assert.Equal(oldMessagesSent, existingUserActivity.MessagesSent);
+    }
 
-		var dbSet = new Mock<DbSet<UserActivity>>();
-		_dbContext.Setup(x => x.UserActivities).ReturnsDbSet(userActivities, dbSet);
+    [Fact]
+    public async Task SaveUserChatActivity_NullUser()
+    {
+        var userActivities = Enumerable.Empty<UserActivity>();
 
-		await _userActivityRepository.SaveUserChatActivity("someUsername");
+        var dbSet = userActivities.AsQueryable().BuildMockDbSet();
+        _dbContext.UserActivities.Returns(dbSet);
 
-		_dbContext.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-	}
+        await _userActivityRepository.SaveUserChatActivity("someUsername");
 
-	[Fact]
-	public async Task SaveUserChatActivity_ValidUser_MessagesSentIsUpdated()
-	{
-		var oldLastJoinDate = DateTime.Now;
-		const string userName = "calledude";
-		const int oldMessagesSent = 2;
-		var oldStreamSessionId = Guid.NewGuid();
-		const int oldTimesSeen = 4;
-		var existingUserActivity = new UserActivity
-		{
-			LastJoinDate = oldLastJoinDate,
-			Username = userName,
-			MessagesSent = oldMessagesSent,
-			StreamSession = oldStreamSessionId,
-			TimesSeen = oldTimesSeen
-		};
+        await _dbContext.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
 
-		var userActivities = new List<UserActivity>
-		{
-			existingUserActivity
-		};
+    [Fact]
+    public async Task SaveUserChatActivity_ValidUser_MessagesSentIsUpdated()
+    {
+        var oldLastJoinDate = DateTime.Now;
+        const string userName = "calledude";
+        const int oldMessagesSent = 2;
+        var oldStreamSessionId = Guid.NewGuid();
+        const int oldTimesSeen = 4;
+        var existingUserActivity = new UserActivity
+        {
+            LastJoinDate = oldLastJoinDate,
+            Username = userName,
+            MessagesSent = oldMessagesSent,
+            StreamSession = oldStreamSessionId,
+            TimesSeen = oldTimesSeen
+        };
 
-		var dbSet = new Mock<DbSet<UserActivity>>();
-		_dbContext.Setup(x => x.UserActivities).ReturnsDbSet(userActivities, dbSet);
+        var userActivities = new List<UserActivity>
+        {
+            existingUserActivity
+        };
 
-		await _userActivityRepository.SaveUserChatActivity(userName);
+        var dbSet = userActivities.AsQueryable().BuildMockDbSet();
+        _dbContext.UserActivities.Returns(dbSet);
 
-		_dbContext.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        await _userActivityRepository.SaveUserChatActivity(userName);
 
-		Assert.Equal(oldTimesSeen, existingUserActivity.TimesSeen);
-		Assert.Equal(oldLastJoinDate, existingUserActivity.LastJoinDate);
-		Assert.Equal(userName, existingUserActivity.Username);
-		Assert.Equal(oldStreamSessionId, existingUserActivity.StreamSession);
-		Assert.Equal(oldMessagesSent + 1, existingUserActivity.MessagesSent);
-	}
+        await _dbContext.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
 
-	[Fact]
-	public async Task GetUserActivity_ReturnsCorrectUser()
-	{
-		const string userName = "calledude";
-		var userActivity1 = new UserActivity
-		{
-			Username = userName,
-		};
+        Assert.Equal(oldTimesSeen, existingUserActivity.TimesSeen);
+        Assert.Equal(oldLastJoinDate, existingUserActivity.LastJoinDate);
+        Assert.Equal(userName, existingUserActivity.Username);
+        Assert.Equal(oldStreamSessionId, existingUserActivity.StreamSession);
+        Assert.Equal(oldMessagesSent + 1, existingUserActivity.MessagesSent);
+    }
 
-		var userActivity2 = new UserActivity
-		{
-			Username = "someOtherUser"
-		};
+    [Fact]
+    public async Task GetUserActivity_ReturnsCorrectUser()
+    {
+        const string userName = "calledude";
+        var userActivity1 = new UserActivity
+        {
+            Username = userName,
+        };
 
-		var userActivities = new List<UserActivity>
-		{
-			userActivity1,
-			userActivity2
-		};
+        var userActivity2 = new UserActivity
+        {
+            Username = "someOtherUser"
+        };
 
-		var dbSet = new Mock<DbSet<UserActivity>>();
-		_dbContext.Setup(x => x.UserActivities).ReturnsDbSet(userActivities, dbSet);
+        var userActivities = new List<UserActivity>
+        {
+            userActivity1,
+            userActivity2
+        };
 
-		var actualUserActivity = await _userActivityRepository.GetUserActivity(userName);
+        var dbSet = userActivities.AsQueryable().BuildMockDbSet();
+        _dbContext.UserActivities.Returns(dbSet);
 
-		Assert.Equal(userActivity1, actualUserActivity);
-	}
+        var actualUserActivity = await _userActivityRepository.GetUserActivity(userName);
+
+        Assert.Equal(userActivity1, actualUserActivity);
+    }
 }

@@ -4,7 +4,8 @@ using calledudeBot.Services;
 using calledudeBotCore.Tests.ObjectMothers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
+using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using System;
 using System.Threading.Tasks;
 using Xunit;
@@ -13,50 +14,50 @@ namespace calledudeBotCore.Tests.Commands;
 
 public class OsuUserCommandTests
 {
-    private readonly Mock<IOsuUserService> _osuUserServiceMock;
+    private readonly IOsuUserService _osuUserServiceMock;
     private readonly Logger<OsuUserCommand> _logger = new(NullLoggerFactory.Instance);
 
     public OsuUserCommandTests()
     {
-        _osuUserServiceMock = new Mock<IOsuUserService>();
+        _osuUserServiceMock = Substitute.For<IOsuUserService>();
     }
 
     [Fact]
     public async Task UsernameIsRequired()
     {
-        var osuUserCommand = new OsuUserCommand(_osuUserServiceMock.Object, _logger);
+        var osuUserCommand = new OsuUserCommand(_osuUserServiceMock, _logger);
         var commandParameter = CommandParameterObjectMother.EmptyWithPrefixedWord;
 
         var response = await osuUserCommand.Handle(commandParameter);
 
         Assert.Equal("Username required.", response);
 
-        _osuUserServiceMock.Verify(x => x.GetOsuUser(It.IsAny<string>()), Times.Never);
+        await _osuUserServiceMock.DidNotReceive().GetOsuUser(Arg.Any<string>());
     }
 
     [Fact]
     public async Task ExceptionMessageIsReturnedToUser()
     {
         _osuUserServiceMock
-            .Setup(x => x.GetOsuUser(It.IsAny<string>()))
+            .GetOsuUser(Arg.Any<string>())
             .Throws<Exception>();
 
-        var osuUserCommand = new OsuUserCommand(_osuUserServiceMock.Object, _logger);
+        var osuUserCommand = new OsuUserCommand(_osuUserServiceMock, _logger);
         var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent("user");
         var response = await osuUserCommand.Handle(commandParameter);
 
         Assert.Equal("An error occured while getting osu! user data. Try again later.", response);
-        _osuUserServiceMock.Verify(x => x.GetOsuUser(It.IsAny<string>()), Times.Once);
+        await _osuUserServiceMock.Received(1).GetOsuUser(Arg.Any<string>());
     }
 
     [Fact]
     public async Task CouldNotFindUser()
     {
         _osuUserServiceMock
-            .Setup(x => x.GetOsuUser(It.IsAny<string>()))
-            .ReturnsAsync((OsuUser?)null);
+            .GetOsuUser(Arg.Any<string>())
+            .Returns((OsuUser?)null);
 
-        var osuUserCommand = new OsuUserCommand(_osuUserServiceMock.Object, _logger);
+        var osuUserCommand = new OsuUserCommand(_osuUserServiceMock, _logger);
 
         const string userName = "SomeUser";
         var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent(userName);
@@ -64,8 +65,9 @@ public class OsuUserCommandTests
 
         Assert.Equal($"Could not find user {userName}", response);
 
-        _osuUserServiceMock.Verify(x => x.GetOsuUser(It.Is<string>(y => y == userName)), Times.Once);
-        _osuUserServiceMock.VerifyNoOtherCalls();
+        await _osuUserServiceMock.Received(1).GetOsuUser(Arg.Is<string>(y => y == userName));
+
+        Assert.Single(_osuUserServiceMock.ReceivedCalls());
     }
 
     [Fact]
@@ -74,10 +76,10 @@ public class OsuUserCommandTests
         var osuUser = OsuUserObjectMother.CreateOsuUser();
 
         _osuUserServiceMock
-            .Setup(x => x.GetOsuUser(It.IsAny<string>()))
-            .ReturnsAsync(osuUser);
+            .GetOsuUser(Arg.Any<string>())
+            .Returns(osuUser);
 
-        var osuUserCommand = new OsuUserCommand(_osuUserServiceMock.Object, _logger);
+        var osuUserCommand = new OsuUserCommand(_osuUserServiceMock, _logger);
 
         const string userName = "calledude";
         var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent(userName);
@@ -85,7 +87,7 @@ public class OsuUserCommandTests
 
         Assert.Equal($"osu! player {osuUser.Username} - Lv. {osuUser.Level} has 4141.41PP (Global: #42069 - Country: #1337) with 99.95% accuracy", response);
 
-        _osuUserServiceMock.Verify(x => x.GetOsuUser(It.Is<string>(y => y == userName)), Times.Once);
-        _osuUserServiceMock.VerifyNoOtherCalls();
+        await _osuUserServiceMock.Received(1).GetOsuUser(Arg.Is<string>(y => y == userName));
+        Assert.Single(_osuUserServiceMock.ReceivedCalls());
     }
 }

@@ -3,7 +3,7 @@ using calledudeBot.Database.Activity;
 using calledudeBot.Database.Session;
 using calledudeBot.Services;
 using calledudeBotCore.Tests.ObjectMothers;
-using Moq;
+using NSubstitute;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -13,8 +13,8 @@ namespace calledudeBotCore.Tests.Commands;
 
 public class StatsCommandTests
 {
-    private readonly Mock<IUserSessionService> _userSessionService;
-    private readonly Mock<IUserActivityService> _userActivityService;
+    private readonly IUserSessionService _userSessionService;
+    private readonly IUserActivityService _userActivityService;
 
     private readonly List<UserSession> _userSessionsSingle;
     private readonly UserActivity _userActivity;
@@ -26,8 +26,8 @@ public class StatsCommandTests
 
     public StatsCommandTests()
     {
-        _userSessionService = new Mock<IUserSessionService>();
-        _userActivityService = new Mock<IUserActivityService>();
+        _userSessionService = Substitute.For<IUserSessionService>();
+        _userActivityService = Substitute.For<IUserActivityService>();
         _userSession1 = new UserSession
         {
             WatchTime = TimeSpan.FromSeconds(4)
@@ -63,12 +63,12 @@ public class StatsCommandTests
 
         var commandParameter = CommandParameterObjectMother.CreateWithEmptyMessageAndUserName(username);
 
-        var target = new StatsCommand(_userSessionService.Object, _userActivityService.Object);
+        var target = new StatsCommand(_userSessionService, _userActivityService);
         var result = await target.Handle(commandParameter);
 
-        _userActivityService.Verify(x => x.GetUserActivity(It.Is<string>(y => y == username)));
-        _userActivityService.VerifyNoOtherCalls();
-        _userSessionService.VerifyNoOtherCalls();
+        await _userActivityService.Received(1).GetUserActivity(Arg.Is<string>(y => y == username));
+        Assert.Single(_userActivityService.ReceivedCalls());
+        Assert.Empty(_userSessionService.ReceivedCalls());
 
         Assert.Equal($"User {username} has no recorded activity.", result);
     }
@@ -81,20 +81,20 @@ public class StatsCommandTests
         var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent(username);
 
         _userActivityService
-            .Setup(x => x.GetUserActivity(It.IsAny<string>()))
-            .ReturnsAsync(_userActivity);
+            .GetUserActivity(Arg.Any<string>())
+            .Returns(_userActivity);
 
         _userSessionService
-            .Setup(x => x.GetUserSessions(It.IsAny<string>()))
-            .ReturnsAsync(_userSessionsSingle);
+            .GetUserSessions(Arg.Any<string>())
+            .Returns(_userSessionsSingle);
 
-        var target = new StatsCommand(_userSessionService.Object, _userActivityService.Object);
+        var target = new StatsCommand(_userSessionService, _userActivityService);
         var result = await target.Handle(commandParameter);
 
-        _userActivityService.Verify(x => x.GetUserActivity(It.Is<string>(y => y == username)));
-        _userActivityService.VerifyNoOtherCalls();
-        _userSessionService.Verify(x => x.GetUserSessions(It.Is<string>(y => y == username)));
-        _userSessionService.VerifyNoOtherCalls();
+        await _userActivityService.Received(1).GetUserActivity(Arg.Is<string>(y => y == username));
+        Assert.Single(_userActivityService.ReceivedCalls());
+        await _userSessionService.Received(1).GetUserSessions(Arg.Is<string>(y => y == username));
+        Assert.Single(_userSessionService.ReceivedCalls());
 
         Assert.Equal($"User {username} | Total watchtime: {_userSessionsSingle[0].WatchTime} | Seen: {_userActivity.TimesSeen} times | Messages: {_userActivity.MessagesSent}", result);
     }
@@ -107,20 +107,20 @@ public class StatsCommandTests
         var commandParameter = CommandParameterObjectMother.CreateWithEmptyMessageAndUserName(username);
 
         _userActivityService
-            .Setup(x => x.GetUserActivity(It.IsAny<string>()))
-            .ReturnsAsync(_userActivity);
+            .GetUserActivity(Arg.Any<string>())
+            .Returns(_userActivity);
 
         _userSessionService
-            .Setup(x => x.GetUserSessions(It.IsAny<string>()))
-            .ReturnsAsync(_userSessionsSingle);
+            .GetUserSessions(Arg.Any<string>())
+            .Returns(_userSessionsSingle);
 
-        var target = new StatsCommand(_userSessionService.Object, _userActivityService.Object);
+        var target = new StatsCommand(_userSessionService, _userActivityService);
         var result = await target.Handle(commandParameter);
 
-        _userActivityService.Verify(x => x.GetUserActivity(It.Is<string>(y => y == username)));
-        _userActivityService.VerifyNoOtherCalls();
-        _userSessionService.Verify(x => x.GetUserSessions(It.Is<string>(y => y == username)));
-        _userSessionService.VerifyNoOtherCalls();
+        await _userActivityService.Received(1).GetUserActivity(Arg.Is<string>(y => y == username));
+        Assert.Single(_userActivityService.ReceivedCalls());
+        await _userSessionService.Received(1).GetUserSessions(Arg.Is<string>(y => y == username));
+        Assert.Single(_userSessionService.ReceivedCalls());
 
         Assert.Equal($"User {username} | Total watchtime: {_userSessionsSingle[0].WatchTime} | Seen: {_userActivity.TimesSeen} times | Messages: {_userActivity.MessagesSent}", result);
     }
@@ -133,20 +133,20 @@ public class StatsCommandTests
         var commandParameter = CommandParameterObjectMother.CreateWithEmptyMessageAndUserName(username);
 
         _userActivityService
-            .Setup(x => x.GetUserActivity(It.IsAny<string>()))
-            .ReturnsAsync(_userActivity);
+            .GetUserActivity(Arg.Any<string>())
+            .Returns(_userActivity);
 
         _userSessionService
-            .Setup(x => x.GetUserSessions(It.IsAny<string>()))
-            .ReturnsAsync(_userSessionsMultiple);
+            .GetUserSessions(Arg.Any<string>())
+            .Returns(_userSessionsMultiple);
 
-        var target = new StatsCommand(_userSessionService.Object, _userActivityService.Object);
+        var target = new StatsCommand(_userSessionService, _userActivityService);
         var result = await target.Handle(commandParameter);
 
-        _userActivityService.Verify(x => x.GetUserActivity(It.Is<string>(y => y == username)));
-        _userActivityService.VerifyNoOtherCalls();
-        _userSessionService.Verify(x => x.GetUserSessions(It.Is<string>(y => y == username)));
-        _userSessionService.VerifyNoOtherCalls();
+        await _userActivityService.Received(1).GetUserActivity(Arg.Is<string>(y => y == username));
+        Assert.Single(_userActivityService.ReceivedCalls());
+        await _userSessionService.Received(1).GetUserSessions(Arg.Is<string>(y => y == username));
+        Assert.Single(_userSessionService.ReceivedCalls());
 
         var watchTime = _userSession1.WatchTime + _userSession2.WatchTime;
 
