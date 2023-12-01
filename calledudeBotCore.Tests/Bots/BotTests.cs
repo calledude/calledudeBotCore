@@ -130,7 +130,7 @@ public class BotTests
         var mods = await twitch.GetMods();
         Assert.DoesNotContain(mods, x => x == "calledude");
         Assert.NotNull(message);
-        Assert.True(await message!.Sender!.IsModerator());
+        Assert.True(await message.Sender!.IsModerator());
     }
 
     [Theory]
@@ -155,7 +155,7 @@ public class BotTests
         Assert.Single(calls);
 
         Assert.NotNull(userParticipation);
-        Assert.Equal(participationType, userParticipation!.ParticipationType);
+        Assert.Equal(participationType, userParticipation.ParticipationType);
         Assert.Equal("calledude", userParticipation.User.Name);
     }
 
@@ -181,7 +181,7 @@ public class BotTests
         await ircClient.Received(1).WriteLine(Arg.Is<string>(y => y == "CAP REQ :twitch.tv/membership"));
 
         Assert.NotNull(readyNotification);
-        Assert.Equal(twitch, readyNotification!.Bot);
+        Assert.Equal(twitch, readyNotification.Bot);
     }
 
     [Fact]
@@ -201,9 +201,10 @@ public class BotTests
         const string username = "calledude";
         ircClient.ChatUserJoined += Raise.Event<Func<string, Task>>(username);
 
-        Assert.Equal(username, actualNotification!.User.Name);
-        Assert.Equal(ParticipationType.Join, actualNotification!.ParticipationType);
-        Assert.Equal(DateTime.Now, actualNotification!.When, TimeSpan.FromSeconds(1));
+        Assert.NotNull(actualNotification);
+        Assert.Equal(username, actualNotification.User.Name);
+        Assert.Equal(ParticipationType.Join, actualNotification.ParticipationType);
+        Assert.Equal(DateTime.Now, actualNotification.When, TimeSpan.FromSeconds(1));
     }
 
     [Fact]
@@ -223,8 +224,9 @@ public class BotTests
         const string username = "calledude";
         ircClient.ChatUserLeft += Raise.Event<Func<string, Task>>(username);
 
-        Assert.Equal(username, actualNotification!.User.Name);
-        Assert.Equal(ParticipationType.Leave, actualNotification!.ParticipationType);
-        Assert.Equal(DateTime.Now, actualNotification!.When, TimeSpan.FromSeconds(1));
+        Assert.NotNull(actualNotification);
+        Assert.Equal(username, actualNotification.User.Name);
+        Assert.Equal(ParticipationType.Leave, actualNotification.ParticipationType);
+        Assert.Equal(DateTime.Now, actualNotification.When, TimeSpan.FromSeconds(1));
     }
 }

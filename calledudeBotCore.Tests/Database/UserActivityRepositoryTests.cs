@@ -47,7 +47,7 @@ public class UserActivityRepositoryTests
         await _userActivityRepository.SaveUserActivity(userParticipationNotification, streamSessionId);
 
         Assert.NotNull(actualEntity);
-        Assert.Equal(now, actualEntity!.LastJoinDate);
+        Assert.Equal(now, actualEntity.LastJoinDate);
         Assert.Equal(userName, actualEntity.Username);
         Assert.Equal(1, actualEntity.TimesSeen);
         Assert.Equal(streamSessionId, actualEntity.StreamSession);

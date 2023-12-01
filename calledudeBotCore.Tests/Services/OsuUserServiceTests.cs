@@ -42,7 +42,7 @@ public class OsuUserServiceTests
     [InlineData(null, "osuUsername", false)]
     [InlineData("calledude", "calledude", false)]
     [InlineData("calledude", "calledude", true)]
-    public async Task GetOsuUser(string username, string requestUsername, bool success)
+    public async Task GetOsuUser(string? username, string requestUsername, bool success)
     {
         string? actualUrl = null;
         var client = Substitute.For<IHttpClientWrapper>();
@@ -51,7 +51,7 @@ public class OsuUserServiceTests
             .Returns((success, new OsuUser[] { OsuUserObjectMother.CreateOsuUser() }));
 
         var target = new OsuUserService(client, _config, null!, _logger, Substitute.For<IAsyncTimer>());
-        var result = await target.GetOsuUser(username);
+        var result = await target.GetOsuUser(username!);
 
         if (success)
         {
@@ -98,7 +98,7 @@ public class OsuUserServiceTests
     [InlineData(32069, 5151.51f, 42069, 4141.41f, "calledude just lost 10000 ranks (#42069). PP: -1010.10pp (4141.41pp)", 1)]
     [InlineData(42069, 4141.5f, 42069, 4141.41f, null, 0)]
     [InlineData(42069, 4141.41f, 42069, 4141.5f, null, 0)]
-    public async Task Rank_PP_Calculations(int oldRank, float oldPP, int newRank, float newPP, string expectedOutput, int timesCalled)
+    public async Task Rank_PP_Calculations(int oldRank, float oldPP, int newRank, float newPP, string? expectedOutput, int timesCalled)
     {
         var oldOsuUser = OsuUserObjectMother.CreateOsuUser(rank: oldRank, pp: oldPP);
         var newOsuUser = OsuUserObjectMother.CreateOsuUser(rank: newRank, pp: newPP);

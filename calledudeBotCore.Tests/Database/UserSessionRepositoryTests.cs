@@ -45,7 +45,7 @@ public class UserSessionRepositoryTests
         await _dbContext.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
 
         Assert.NotNull(actualEntity);
-        Assert.Equal(userActivityEntity.Username, actualEntity!.Username);
+        Assert.Equal(userActivityEntity.Username, actualEntity.Username);
         Assert.Equal(userActivityEntity.LastJoinDate, actualEntity.StartTime);
         Assert.InRange(actualEntity.EndTime, now.AddSeconds(-1), now.AddSeconds(1));
         Assert.Equal(actualEntity.EndTime - userActivityEntity.LastJoinDate, actualEntity.WatchTime);

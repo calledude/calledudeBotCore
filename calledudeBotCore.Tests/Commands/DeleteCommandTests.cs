@@ -110,7 +110,7 @@ public class DeleteCommandTests
     [Theory]
     [InlineData(" !doesNotExist")]
     [InlineData(null)]
-    public async Task DeleteCommand_InvalidCommand(string commandToDelete)
+    public async Task DeleteCommand_InvalidCommand(string? commandToDelete)
     {
         var commandParameter = CommandParameterObjectMother.CreateWithMessageContent($"{_target.Name}{commandToDelete}");
 

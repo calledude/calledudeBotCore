@@ -111,10 +111,11 @@ public class DiscordBotTests
 
         _discordSocketClient.MessageReceived += Raise.Event<Func<IMessage, Task>>(messageMock);
 
-        Assert.Equal(content, actualMessage!.Content);
-        Assert.Equal($"#{channelName}", actualMessage!.Channel);
-        Assert.Equal(username, actualMessage!.Sender!.Name);
-        Assert.Equal(channelId, actualMessage!.Destination);
+        Assert.NotNull(actualMessage);
+        Assert.Equal(content, actualMessage.Content);
+        Assert.Equal($"#{channelName}", actualMessage.Channel);
+        Assert.Equal(username, actualMessage.Sender?.Name);
+        Assert.Equal(channelId, actualMessage.Destination);
 
         await _messageDispatcher.Received(1).PublishAsync(Arg.Any<DiscordMessage>(), Arg.Any<CancellationToken>());
         Assert.Single(_messageDispatcher.ReceivedCalls());
