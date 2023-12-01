@@ -8,10 +8,12 @@
 		<TargetFramework>net7.0</TargetFramework>
 		<LangVersion>preview</LangVersion>
 		<Nullable>enable</Nullable>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
 		<RootNamespace>calledudeBot</RootNamespace>
 		<AnalysisLevel>preview</AnalysisLevel>
 		<AssemblyName>calledudeBotCore</AssemblyName>
-		<WarningLevel>7</WarningLevel>
+		<WarningLevel>9999</WarningLevel>
 	</PropertyGroup>
 
 	<ItemGroup>
