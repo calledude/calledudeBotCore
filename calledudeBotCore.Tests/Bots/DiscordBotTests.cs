@@ -206,58 +206,55 @@ public class DiscordBotTests
         Assert.True(isMod);
     }
 
-    // TODO: Waiting on https://github.com/nsubstitute/NSubstitute/pull/715 to be merged
+    [Theory]
+    [InlineData(LogSeverity.Critical, null)]
+    [InlineData(LogSeverity.Critical, "")]
+    [InlineData(LogSeverity.Debug, "")]
+    [InlineData(LogSeverity.Warning, "")]
+    [InlineData(LogSeverity.Error, null)]
+    [InlineData(LogSeverity.Error, "")]
+    [InlineData(LogSeverity.Info, "")]
+    [InlineData(LogSeverity.Verbose, "")]
+    public async Task Log_CallsCorrectMethod(LogSeverity severity, string? message)
+    {
+        await _discordBot.StartAsync(CancellationToken.None);
 
-    //[Theory]
-    //[InlineData(LogSeverity.Critical, null)]
-    //[InlineData(LogSeverity.Critical, "")]
-    //[InlineData(LogSeverity.Debug, "")]
-    //[InlineData(LogSeverity.Warning, "")]
-    //[InlineData(LogSeverity.Error, null)]
-    //[InlineData(LogSeverity.Error, "")]
-    //[InlineData(LogSeverity.Info, "")]
-    //[InlineData(LogSeverity.Verbose, "")]
-    //public async Task Log_CallsCorrectMethod(LogSeverity severity, string message)
-    //{
-    //    await _discordBot.StartAsync(CancellationToken.None);
+        _discordSocketClient.Log += Raise.Event<Func<LogMessage, Task>>(new LogMessage(severity, string.Empty, message));
 
-    //    _discordSocketClient.Log += Raise.Event<Func<LogMessage, Task>>(new LogMessage(severity, string.Empty, message));
+        void VerifyLogCall(LogLevel logLevel)
+        {
+            _logger
+                .Received(1)
+                .Log
+                (
+                    logLevel,
+                    Arg.Any<EventId>(),
+                    Arg.Any<Arg.AnyType>(),
+                    Arg.Any<Exception?>(),
+                    Arg.Any<Func<Arg.AnyType, Exception?, string>>()
+                );
+        }
 
-    //    void VerifyLogCall(LogLevel logLevel)
-    //    {
-    //        _logger
-    //            .Received(1)
-    //            .Log
-    //            (
-    //                logLevel,
-    //                Arg.Any<EventId>(),
-    //                Arg.Any<Arg.AnyType>(),
-    //                Arg.Any<Exception?>(),
-
-    //                Arg.Any<Func<Arg.AnyType, Exception?, string>>()
-    //            );
-    //    }
-
-    //    switch (severity)
-    //    {
-    //        case LogSeverity.Critical:
-    //            VerifyLogCall(LogLevel.Critical);
-    //            break;
-    //        case LogSeverity.Error:
-    //            VerifyLogCall(LogLevel.Error);
-    //            break;
-    //        case LogSeverity.Warning:
-    //            VerifyLogCall(LogLevel.Warning);
-    //            break;
-    //        case LogSeverity.Info:
-    //            VerifyLogCall(LogLevel.Information);
-    //            break;
-    //        case LogSeverity.Verbose:
-    //            VerifyLogCall(LogLevel.Trace);
-    //            break;
-    //        case LogSeverity.Debug:
-    //            VerifyLogCall(LogLevel.Debug);
-    //            break;
-    //    }
-    //}
+        switch (severity)
+        {
+            case LogSeverity.Critical:
+                VerifyLogCall(LogLevel.Critical);
+                break;
+            case LogSeverity.Error:
+                VerifyLogCall(LogLevel.Error);
+                break;
+            case LogSeverity.Warning:
+                VerifyLogCall(LogLevel.Warning);
+                break;
+            case LogSeverity.Info:
+                VerifyLogCall(LogLevel.Information);
+                break;
+            case LogSeverity.Verbose:
+                VerifyLogCall(LogLevel.Trace);
+                break;
+            case LogSeverity.Debug:
+                VerifyLogCall(LogLevel.Debug);
+                break;
+        }
+    }
 }
