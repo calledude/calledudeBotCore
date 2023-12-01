@@ -137,7 +137,6 @@ public class OsuUserServiceTests
             await callback!.Invoke(CancellationToken.None);
         }
 
-
         await twitchMock.Received(timesCalled).SendMessageAsync(Arg.Any<IrcMessage>());
         Assert.Equal(timesCalled, twitchMock.ReceivedCalls().Count());
 

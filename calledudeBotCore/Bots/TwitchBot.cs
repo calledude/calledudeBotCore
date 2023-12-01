@@ -27,6 +27,8 @@ public sealed class TwitchBot : TwitchBotBase, ITwitchBot
 
 	public override string Name => "TwitchBot";
 
+	private static readonly char[] _modListSeparator = [',', ' '];
+
 	public TwitchBot(
 		IIrcClient ircClient,
 		ITwitchBotConfig config,
@@ -87,7 +89,7 @@ public sealed class TwitchBot : TwitchBotBase, ITwitchBot
 			return;
 
 		var modsIndex = _moderatorMessage.Length;
-		var modsArr = buffer[modsIndex..].Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+		var modsArr = buffer[modsIndex..].Split(_modListSeparator, StringSplitOptions.RemoveEmptyEntries);
 
 		await _modsChan.Writer.WriteAsync(modsArr);
 	}
