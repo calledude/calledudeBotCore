@@ -28,15 +28,15 @@ public sealed class OsuBot : IOsuBot
 		ircClient.Nick = config.OsuUsername!;
 		ircClient.ChannelName = config.OsuUsername;
 		ircClient.Token = config.OsuIRCToken!;
-		ircClient.MessageFilters = new()
-		{
+		ircClient.MessageFilters =
+		[
 			"QUIT"
-		};
+		];
 
-		ircClient.Failures = new HashSet<string>
-		{
+		ircClient.Failures =
+		[
 			$":cho.ppy.sh 464 {ircClient.Nick} :Bad authentication token.",
-		};
+		];
 	}
 
 	public async Task SendMessageAsync(IrcMessage message)

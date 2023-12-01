@@ -14,7 +14,7 @@ public sealed class UptimeCommand : SpecialCommand
 	{
 		Name = "!uptime";
 		Description = "Shows how long the stream has been live";
-		AlternateName = new List<string> { "!live" };
+		AlternateName = ["!live"];
 		RequiresMod = false;
 		_streamingState = streamingState;
 	}

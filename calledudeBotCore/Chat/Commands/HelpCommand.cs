@@ -13,7 +13,7 @@ public sealed class HelpCommand : SpecialCommand<CommandParameter>
 	public HelpCommand(Lazy<ICommandContainer> commandContainer)
 	{
 		Name = "!help";
-		AlternateName = new List<string> { "!commands", "!cmds" };
+		AlternateName = ["!commands", "!cmds"];
 		Description = "Lists all available commands or helps you with a specific one.";
 		RequiresMod = false;
 		_commandContainer = commandContainer;

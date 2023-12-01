@@ -16,7 +16,7 @@ public class EditCommand : SpecialCommand<CommandParameter>
         Name = "!editcmd";
         Description = "Edits a command that exists";
         RequiresMod = true;
-        AlternateName = new List<string> { "!edit", "!editcommand" };
+        AlternateName = ["!edit", "!editcommand"];
         _commandContainer = commandContainer;
     }
 
@@ -104,7 +104,7 @@ public class EditCommand : SpecialCommand<CommandParameter>
 
     private Result<string> EditAlternateNames(Command command, string mode, IEnumerable<string> prefixedWords)
     {
-        command.AlternateName ??= new List<string>();
+        command.AlternateName ??= [];
 
         var oldAlternateNames = new HashSet<string>(command.AlternateName);
 

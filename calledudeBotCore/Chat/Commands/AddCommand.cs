@@ -16,7 +16,7 @@ public sealed class AddCommand : SpecialCommand<CommandParameter>
         Name = "!addcmd";
         Description = "Adds a command to the command list";
         RequiresMod = true;
-        AlternateName = new List<string> { "!add", "!addcommand" };
+        AlternateName = ["!add", "!addcommand"];
         _commandContainer = commandContainer;
     }
 

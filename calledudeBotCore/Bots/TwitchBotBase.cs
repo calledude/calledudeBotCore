@@ -30,11 +30,11 @@ public abstract class TwitchBotBase : IMessageBot<IrcMessage>
 		IrcClient.ChannelName = ChannelName;
 		IrcClient.Token = config.TwitchToken!;
 
-		IrcClient.Failures = new HashSet<string>
-		{
+		IrcClient.Failures =
+		[
 			":tmi.twitch.tv NOTICE * :Improperly formatted auth",
 			":tmi.twitch.tv NOTICE * :Login authentication failed",
-		};
+		];
 	}
 
 	public async Task SendMessageAsync(IrcMessage message)

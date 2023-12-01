@@ -105,7 +105,7 @@ public static class ServiceCollectionExtensions
 			File.WriteAllText(CommandContainer.COMMANDFILE, JsonConvert.SerializeObject(new List<Command>()));
 		}
 
-		var commands = JsonConvert.DeserializeObject<Command[]>(File.ReadAllText(CommandContainer.COMMANDFILE)) ?? Array.Empty<Command>();
+		var commands = JsonConvert.DeserializeObject<Command[]>(File.ReadAllText(CommandContainer.COMMANDFILE)) ?? [];
 
 		var specialCommands = Assembly.GetExecutingAssembly()
 			.GetTypes()
