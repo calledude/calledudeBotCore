@@ -148,7 +148,7 @@ public class EditCommand : SpecialCommand<CommandParameter>
 
             command.AlternateName.Clear();
 
-            response = $"Cleared all alternative names for {command.Name}";
+            response = $"Cleared all alternative names for '{command.Name}'";
         }
 
         if (oldAlternateNames.SetEquals(command.AlternateName))

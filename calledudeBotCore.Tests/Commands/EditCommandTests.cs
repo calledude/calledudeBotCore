@@ -99,7 +99,7 @@ public class EditCommandTests
         var existingCommand = new Command()
         {
             Name = commandName,
-            AlternateName = new List<string> { "!old", "!one", "!two" }
+            AlternateName = new List<string> { "!old" }
         };
 
         _commands.Add(existingCommand);
@@ -137,27 +137,6 @@ public class EditCommandTests
         Assert.Equal(expectedNewAlternates, existingCommand.AlternateName);
     }
 
-    [Fact] //TODO: alt?
-    public async Task EditCommandAlternateNames_SuccessfulClear()
-    {
-        const string commandName = "!someExistingCommand";
-
-        var existingCommand = new Command()
-        {
-            Name = commandName,
-            AlternateName = new List<string> { "!old", "!one", "!two" }
-        };
-
-        _commands.Add(existingCommand);
-
-        var messageContent = $"!edit {commandName} alternate clear";
-        var commandParameter = CommandParameterObjectMother.CreateWithMessageContentAsMod(messageContent);
-        var result = await _target.Handle(commandParameter);
-
-        Assert.Equal($"Cleared all alternative names for {commandName}", result);
-        Assert.Empty(existingCommand.AlternateName);
-    }
-
     [Fact]
     public async Task ExistingCommand_NoChangesRequired()
     {
@@ -181,48 +160,14 @@ public class EditCommandTests
         _commands.Add(existingCommand);
 
         var alternates = string.Join(" ", alternateNames);
-        var messageContent = $"{_target.Name} {commandName} {alternates} {commandResponse} <{description}>";
+        var messageContent = $"{_target.Name} {commandName} alternate {alternates}";
         var commandParameter = CommandParameterObjectMother.CreateWithMessageContentAsMod(messageContent);
 
         var response = await _target.Handle(commandParameter);
 
-        Assert.Equal($"Command '{existingCommand.Name}' already exists.", response);
+        Assert.Equal("Nothing changed", response);
 
         _commandContainer.DidNotReceive().SaveCommandsToFile();
-    }
-
-    [Theory]
-    [InlineData("hello :)", "waddup ;D", "", "", "response")]
-    [InlineData("eh", "eh", "some description", "new description", "description")]
-    public async Task ExistingCommand_SingleEdit(
-        string oldResponse,
-        string newResponse,
-        string oldDescription,
-        string newDescription,
-        string changedProperty)
-    {
-        const string commandName = "!test";
-
-        var existingCommand = new Command()
-        {
-            Name = commandName,
-            Response = oldResponse,
-            Description = oldDescription
-        };
-
-        _commands.Add(existingCommand);
-
-        var description = newDescription != string.Empty ? $" <{newDescription}>" : null;
-        var messageContent = $"{_target.Name} {commandName} {newResponse}{description}";
-        var commandParameter = CommandParameterObjectMother.CreateWithMessageContentAsMod(messageContent);
-
-        var response = await _target.Handle(commandParameter);
-
-        Assert.Equal($"Changed {changedProperty} of '{existingCommand.Name}'.", response);
-        Assert.Equal(newResponse, existingCommand.Response);
-        Assert.Equal(newDescription, existingCommand.Description);
-
-        _commandContainer.Received(1).SaveCommandsToFile();
     }
 
     [Fact]
@@ -245,13 +190,13 @@ public class EditCommandTests
 
         _commands.Add(existingCommand);
 
-        var messageContent = $"{_target.Name} {commandName} {commandResponse} <{description}>";
+        var messageContent = $"{_target.Name} {commandName} alternate clear";
         var commandParameter = CommandParameterObjectMother.CreateWithMessageContentAsMod(messageContent);
 
         var response = await _target.Handle(commandParameter);
 
-        Assert.Equal($"Removed all alternate commands for '{existingCommand.Name}'", response);
-        Assert.Null(existingCommand.AlternateName);
+        Assert.Equal($"Cleared all alternative names for '{existingCommand.Name}'", response);
+        Assert.Empty(existingCommand.AlternateName);
         Assert.Equal(commandName, existingCommand.Name);
         Assert.Equal(commandResponse, existingCommand.Response);
         Assert.Equal(description, existingCommand.Description);
@@ -259,105 +204,12 @@ public class EditCommandTests
     }
 
     [Fact]
-    public async Task ExistingCommand_EditAlternateNames()
-    {
-        const string commandName = "!test";
-        const string commandResponse = "someResponse";
-
-        var existingCommand = new Command()
-        {
-            Name = commandName,
-            Response = commandResponse,
-            Description = ""
-        };
-
-        _commands.Add(existingCommand);
-
-        var alternateNames = new List<string>
-        {
-            "!someAlt",
-            "!someOtherAlt"
-        };
-
-        var alternates = string.Join(" ", alternateNames);
-
-        var messageContent = $"{_target.Name} {commandName} {alternates} {commandResponse}";
-        var commandParameter = CommandParameterObjectMother.CreateWithMessageContentAsMod(messageContent);
-
-        var response = await _target.Handle(commandParameter);
-
-        Assert.Equal($"Changed alternate command names for '{existingCommand.Name}'. It now has {alternateNames.Count} alternates.", response);
-        Assert.NotNull(existingCommand.AlternateName);
-        Assert.Equal(commandName, existingCommand.Name);
-        Assert.Equal(commandResponse, existingCommand.Response);
-
-        Assert.Equal(2, existingCommand.AlternateName!.Count);
-        Assert.Equal(alternateNames[0], existingCommand.AlternateName[0]);
-        Assert.Equal(alternateNames[1], existingCommand.AlternateName[1]);
-
-        _commandContainer.Received(1).SaveCommandsToFile();
-    }
-
-    [Fact]
-    public async Task ExistingCommand_MultipleChanges()
-    {
-        const string commandName = "!test";
-
-        const string oldCommandResponse = "someResponse";
-        const string newCommandResponse = "someNewResponse";
-
-        const string oldDescription = "someDescription";
-        const string newDescription = "someNewDescription";
-
-        const string existingAltName = "!oldAlt";
-
-        var existingCommand = new Command()
-        {
-            Name = commandName,
-            Response = oldCommandResponse,
-            Description = oldDescription,
-            AlternateName = new List<string>
-            {
-                existingAltName
-            }
-        };
-
-        _commands.Add(existingCommand);
-
-        var newAlternateNames = new List<string>
-        {
-            "!someAlt",
-            "!someOtherAlt"
-        };
-
-        var alternates = string.Join(" ", newAlternateNames);
-
-        var messageContent = $"{_target.Name} {commandName} {alternates} {newCommandResponse} <{newDescription}>";
-        var commandParameter = CommandParameterObjectMother.CreateWithMessageContentAsMod(messageContent);
-
-        var response = await _target.Handle(commandParameter);
-
-        Assert.Equal($"Done. Several changes made to command '{existingCommand.Name}'.", response);
-        Assert.NotNull(existingCommand.AlternateName);
-        Assert.Equal(commandName, existingCommand.Name);
-        Assert.Equal(newCommandResponse, existingCommand.Response);
-        Assert.Equal(newDescription, existingCommand.Description);
-
-        Assert.Equal(3, existingCommand.AlternateName!.Count);
-        Assert.Equal(existingAltName, existingCommand.AlternateName[0]);
-        Assert.Equal(newAlternateNames[0], existingCommand.AlternateName[1]);
-        Assert.Equal(newAlternateNames[1], existingCommand.AlternateName[2]);
-
-        _commandContainer.Received(1).SaveCommandsToFile();
-    }
-
-    [Fact]
     public async Task EditingSpecialCommandNotAllowed_SpecialCommand()
-    => await EditingSpecialCommandNotAllowed<SpecialCommand>();
+        => await EditingSpecialCommandNotAllowed<SpecialCommand>();
 
     [Fact]
     public async Task EditingSpecialCommandNotAllowed_SpecialCommand_CommandParameter()
-    => await EditingSpecialCommandNotAllowed<SpecialCommand<CommandParameter>>();
+        => await EditingSpecialCommandNotAllowed<SpecialCommand<CommandParameter>>();
 
     private async Task EditingSpecialCommandNotAllowed<T>() where T : Command
     {
@@ -370,6 +222,6 @@ public class EditCommandTests
 
         var response = await _target.Handle(commandParameter);
 
-        Assert.Equal("You can't change a special command.", response);
+        Assert.Equal("You can't edit a special command.", response);
     }
 }
