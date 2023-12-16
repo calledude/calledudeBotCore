@@ -148,7 +148,7 @@ public sealed class IrcClient : IIrcClient
 		return MessageFilters.Any(x => buffer.Contains(x));
 	}
 
-	private async IAsyncEnumerable<(string?, string[]?)> MessageLoop(Func<bool> loopCondition, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+	private async IAsyncEnumerable<string?> MessageLoop(Func<bool> loopCondition, [EnumeratorCancellation] CancellationToken cancellationToken = default)
 	{
 		while (loopCondition())
 		{
@@ -159,7 +159,7 @@ public sealed class IrcClient : IIrcClient
 				_logger.LogTrace("[{Server}]: {buffer}", Server, buffer);
 			}
 
-			yield return (buffer, buffer?.Split());
+			yield return buffer;
 		}
 	}
 
@@ -170,8 +170,9 @@ public sealed class IrcClient : IIrcClient
 		await WriteLine($"PASS {Token}\r\nNICK {Nick}\r\n");
 		var resultCode = 0;
 
-		await foreach ((var buffer, var splitBuffer) in MessageLoop(() => resultCode != SuccessCode))
+		await foreach (var buffer in MessageLoop(() => resultCode != SuccessCode))
 		{
+			var splitBuffer = buffer?.Split();
 			_ = int.TryParse(splitBuffer?[1], out resultCode);
 			if (buffer is null || IsFailure(buffer))
 			{
@@ -197,42 +198,55 @@ public sealed class IrcClient : IIrcClient
 	private async Task Listen(CancellationToken cancellationToken)
 	{
 		_logger.LogDebug("Starting message loop listener");
-		await foreach ((var buffer, var splitBuffer) in MessageLoop(() => !cancellationToken.IsCancellationRequested, cancellationToken))
+		await foreach (var buffer in MessageLoop(() => !cancellationToken.IsCancellationRequested, cancellationToken))
 		{
-			if (buffer is null || splitBuffer is null)
+			if (buffer is null)
 				continue;
 
-			if (splitBuffer[0].Equals("PING"))
+			if (buffer.StartsWith("PING"))
 			{
 				await SendPong(buffer);
+				continue;
 			}
-			else if (splitBuffer[1].Equals("PRIVMSG"))
-			{
-				if (MessageReceived is null)
-					continue;
 
-				var messageContent = IrcMessage.ParseMessage(splitBuffer);
-				var user = IrcMessage.ParseUser(buffer);
+			// Offload the rest to a separate non-async method in order to enable stackalloc/spans/etc
+			HandleNonCriticalOpCodes(buffer);
+		}
+	}
 
-				_ = MessageReceived(messageContent, user);
-			}
-			else if (splitBuffer[1] == "JOIN")
-			{
-				var user = IrcMessage.ParseUser(buffer);
-				_ = ChatUserJoined?.Invoke(user);
-			}
-			else if (splitBuffer[1] == "PART")
-			{
-				var user = IrcMessage.ParseUser(buffer);
-				_ = ChatUserLeft?.Invoke(user);
-			}
-			else
-			{
-				if (UnhandledMessage is null)
-					continue;
+	private void HandleNonCriticalOpCodes(ReadOnlySpan<char> buffer)
+	{
+		Span<Range> ranges = stackalloc Range[4];
+		var splitCount = buffer.Split(ranges, ' ');
 
-				_ = UnhandledMessage(buffer);
-			}
+		if (splitCount < 2)
+			return;
+
+		if (buffer[ranges[1]].SequenceEqual("PRIVMSG"))
+		{
+			if (MessageReceived is null)
+				return;
+
+			var (user, messageContent) = IrcMessage.ParseMessage(buffer, ranges, splitCount);
+
+			_ = MessageReceived(messageContent, user);
+		}
+		else if (buffer[ranges[1]].SequenceEqual("JOIN"))
+		{
+			var user = IrcMessage.ParseUser(buffer);
+			_ = ChatUserJoined?.Invoke(user);
+		}
+		else if (buffer[ranges[1]].SequenceEqual("PART"))
+		{
+			var user = IrcMessage.ParseUser(buffer);
+			_ = ChatUserLeft?.Invoke(user);
+		}
+		else
+		{
+			if (UnhandledMessage is null)
+				return;
+
+			_ = UnhandledMessage(buffer.ToString());
 		}
 	}
 

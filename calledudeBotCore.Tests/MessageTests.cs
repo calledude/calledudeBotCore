@@ -1,4 +1,5 @@
 ﻿using calledudeBot.Chat;
+using System;
 using Xunit;
 
 namespace calledudeBotCore.Tests;
@@ -6,13 +7,17 @@ namespace calledudeBotCore.Tests;
 public class MessageTests
 {
 	[Fact]
-	public void ParseMessage_ParsesCorrectly()
+	public void ParseMessageAndUser()
 	{
 		const string message = ":calledude!calledude@calledude.tmi.twitch.tv PRIVMSG #calledude :test";
+		var messageSpan = message.AsSpan();
+		Span<Range> ranges = stackalloc Range[4];
+		var splitCount = messageSpan.Split(ranges, ' ');
 
-		var parsedMessage = IrcMessage.ParseMessage(message.Split());
+		var (parsedUser, parsedMessage) = IrcMessage.ParseMessage(messageSpan, ranges, splitCount);
 
 		Assert.Equal("test", parsedMessage);
+		Assert.Equal("calledude", parsedUser);
 	}
 
 	[Fact]
