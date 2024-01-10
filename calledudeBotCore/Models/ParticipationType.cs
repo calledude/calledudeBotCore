@@ -2,6 +2,6 @@
 
 public enum ParticipationType
 {
-    Join,
-    Leave
+	Join,
+	Leave
 }

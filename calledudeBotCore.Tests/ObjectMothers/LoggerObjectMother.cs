@@ -5,6 +5,6 @@ namespace calledudeBotCore.Tests.ObjectMothers;
 
 public static class LoggerObjectMother
 {
-    public static Logger<T> NullLoggerFor<T>()
-        => new(NullLoggerFactory.Instance);
+	public static Logger<T> NullLoggerFor<T>()
+		=> new(NullLoggerFactory.Instance);
 }

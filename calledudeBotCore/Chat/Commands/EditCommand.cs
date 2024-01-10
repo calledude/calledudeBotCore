@@ -9,153 +9,153 @@ namespace calledudeBot.Chat.Commands;
 
 public class EditCommand : SpecialCommand<CommandParameter>
 {
-    private readonly Lazy<ICommandContainer> _commandContainer;
+	private readonly Lazy<ICommandContainer> _commandContainer;
 
-    public EditCommand(Lazy<ICommandContainer> commandContainer)
-    {
-        Name = "!editcmd";
-        Description = "Edits a command that exists";
-        RequiresMod = true;
-        AlternateName = ["!edit", "!editcommand"];
-        _commandContainer = commandContainer;
-    }
+	public EditCommand(Lazy<ICommandContainer> commandContainer)
+	{
+		Name = "!editcmd";
+		Description = "Edits a command that exists";
+		RequiresMod = true;
+		AlternateName = ["!edit", "!editcommand"];
+		_commandContainer = commandContainer;
+	}
 
-    protected override Task<string> HandleCommand(CommandParameter param)
-    {
-        //has user entered a command to edit? i.e. !editcmd !test description what the fuck
-        if (param.PrefixedWords.Count >= 1 && param.Words.Any())
-        {
-            return Task.FromResult(Edit(param));
-        }
-        else
-        {
-            return Task.FromResult("You ok there bud? Try again.");
-        }
-    }
+	protected override Task<string> HandleCommand(CommandParameter param)
+	{
+		//has user entered a command to edit? i.e. !editcmd !test description what the fuck
+		if (param.PrefixedWords.Count >= 1 && param.Words.Any())
+		{
+			return Task.FromResult(Edit(param));
+		}
+		else
+		{
+			return Task.FromResult("You ok there bud? Try again.");
+		}
+	}
 
-    private string Edit(CommandParameter param)
-    {
-        var commands = _commandContainer.Value.Commands;
-        var foundCommand = commands.GetExistingCommand(param.PrefixedWords[0]);
+	private string Edit(CommandParameter param)
+	{
+		var commands = _commandContainer.Value.Commands;
+		var foundCommand = commands.GetExistingCommand(param.PrefixedWords[0]);
 
-        if (foundCommand is SpecialCommand || foundCommand is SpecialCommand<CommandParameter>)
-        {
-            return "You can't edit a special command.";
-        }
-        else if (foundCommand is not null)
-        {
-            var response = param.Words.First().ToLower() switch
-            {
-                "name" => EditName(foundCommand, param.PrefixedWords),
-                "description" or "desc" or "descr" => EditDescription(foundCommand, param.Words.Skip(1)),
-                "response" or "resp" => EditResponse(foundCommand, param.Words.Skip(1)),
-                "alternate" or "alt" => EditAlternateNames(foundCommand, param.Words.Skip(1).First(), param.PrefixedWords.Skip(1)),
-                _ => "No such sub command exists. Valid sub commands are 'name|description|response|alternate'"
-            };
+		if (foundCommand is SpecialCommand || foundCommand is SpecialCommand<CommandParameter>)
+		{
+			return "You can't edit a special command.";
+		}
+		else if (foundCommand is not null)
+		{
+			var response = param.Words.First().ToLower() switch
+			{
+				"name" => EditName(foundCommand, param.PrefixedWords),
+				"description" or "desc" or "descr" => EditDescription(foundCommand, param.Words.Skip(1)),
+				"response" or "resp" => EditResponse(foundCommand, param.Words.Skip(1)),
+				"alternate" or "alt" => EditAlternateNames(foundCommand, param.Words.Skip(1).First(), param.PrefixedWords.Skip(1)),
+				_ => "No such sub command exists. Valid sub commands are 'name|description|response|alternate'"
+			};
 
-            if (response.Success)
-            {
-                _commandContainer.Value.SaveCommandsToFile();
-                return response.Value;
-            }
+			if (response.Success)
+			{
+				_commandContainer.Value.SaveCommandsToFile();
+				return response.Value;
+			}
 
-            return response.Error;
-        }
-        else
-        {
-            return "No such command to edit exists.";
-        }
-    }
+			return response.Error;
+		}
+		else
+		{
+			return "No such command to edit exists.";
+		}
+	}
 
-    private Result<string> EditName(Command command, IEnumerable<string> prefixedWords)
-    {
-        var previousName = command.Name;
-        command.Name = prefixedWords.Skip(1).Single();
+	private Result<string> EditName(Command command, IEnumerable<string> prefixedWords)
+	{
+		var previousName = command.Name;
+		command.Name = prefixedWords.Skip(1).Single();
 
-        if (command.Name == previousName)
-            return Result.Fail<string>("Nothing was changed.");
+		if (command.Name == previousName)
+			return Result.Fail<string>("Nothing was changed.");
 
-        _commandContainer.Value.Commands.Remove(previousName!);
-        _commandContainer.Value.Commands.Add(command.Name, command);
-        return $"Changed name of '{previousName}' to '{command.Name}'.";
-    }
+		_commandContainer.Value.Commands.Remove(previousName!);
+		_commandContainer.Value.Commands.Add(command.Name, command);
+		return $"Changed name of '{previousName}' to '{command.Name}'.";
+	}
 
-    private static Result<string> EditDescription(Command command, IEnumerable<string> words)
-    {
-        var oldDescription = command.Description;
-        command.Description = string.Join(" ", words);
+	private static Result<string> EditDescription(Command command, IEnumerable<string> words)
+	{
+		var oldDescription = command.Description;
+		command.Description = string.Join(" ", words);
 
-        if (oldDescription == command.Description)
-            return Result.Fail<string>("Nothing was changed");
+		if (oldDescription == command.Description)
+			return Result.Fail<string>("Nothing was changed");
 
-        return $"Changed description of '{command.Name}' to '{command.Description}'.";
-    }
+		return $"Changed description of '{command.Name}' to '{command.Description}'.";
+	}
 
-    private static Result<string> EditResponse(Command command, IEnumerable<string> words)
-    {
-        var oldResponse = command.Response;
-        command.Response = string.Join(" ", words);
+	private static Result<string> EditResponse(Command command, IEnumerable<string> words)
+	{
+		var oldResponse = command.Response;
+		command.Response = string.Join(" ", words);
 
-        if (oldResponse == command.Response)
-            return Result.Fail<string>("Nothing was changed");
+		if (oldResponse == command.Response)
+			return Result.Fail<string>("Nothing was changed");
 
-        return $"Changed response of '{command.Name}' to '{command.Response}'.";
-    }
+		return $"Changed response of '{command.Name}' to '{command.Response}'.";
+	}
 
-    private Result<string> EditAlternateNames(Command command, string mode, IEnumerable<string> prefixedWords)
-    {
-        command.AlternateName ??= [];
+	private Result<string> EditAlternateNames(Command command, string mode, IEnumerable<string> prefixedWords)
+	{
+		command.AlternateName ??= [];
 
-        var oldAlternateNames = new HashSet<string>(command.AlternateName);
+		var oldAlternateNames = new HashSet<string>(command.AlternateName);
 
-        string? response = null;
-        if (mode == "add")
-        {
-            var addedAlternates = new List<string>();
-            foreach (var alternateName in prefixedWords)
-            {
-                if (command.AlternateName.Contains(alternateName))
-                    continue;
+		string? response = null;
+		if (mode == "add")
+		{
+			var addedAlternates = new List<string>();
+			foreach (var alternateName in prefixedWords)
+			{
+				if (command.AlternateName.Contains(alternateName))
+					continue;
 
-                addedAlternates.Add(alternateName);
-                command.AlternateName.Add(alternateName);
-                _commandContainer.Value.Commands.Add(alternateName, command);
-            }
+				addedAlternates.Add(alternateName);
+				command.AlternateName.Add(alternateName);
+				_commandContainer.Value.Commands.Add(alternateName, command);
+			}
 
-            response = $"Added alternate names for '{command.Name}' - {string.Join(" » ", addedAlternates)}";
-        }
-        else if (mode == "remove")
-        {
-            var removedAlternates = new List<string>();
-            foreach (var alternateName in prefixedWords)
-            {
-                if (!command.AlternateName.Contains(alternateName))
-                    continue;
+			response = $"Added alternate names for '{command.Name}' - {string.Join(" » ", addedAlternates)}";
+		}
+		else if (mode == "remove")
+		{
+			var removedAlternates = new List<string>();
+			foreach (var alternateName in prefixedWords)
+			{
+				if (!command.AlternateName.Contains(alternateName))
+					continue;
 
-                removedAlternates.Add(alternateName);
-                command.AlternateName.Remove(alternateName);
-                _commandContainer.Value.Commands.Remove(alternateName);
-            }
+				removedAlternates.Add(alternateName);
+				command.AlternateName.Remove(alternateName);
+				_commandContainer.Value.Commands.Remove(alternateName);
+			}
 
-            response = $"Removed alternate names for '{command.Name}' - {string.Join(" » ", removedAlternates)}";
-        }
-        else if (mode == "clear")
-        {
-            foreach (var alternateName in command.AlternateName)
-            {
-                _commandContainer.Value.Commands.Remove(alternateName);
-            }
+			response = $"Removed alternate names for '{command.Name}' - {string.Join(" » ", removedAlternates)}";
+		}
+		else if (mode == "clear")
+		{
+			foreach (var alternateName in command.AlternateName)
+			{
+				_commandContainer.Value.Commands.Remove(alternateName);
+			}
 
-            command.AlternateName.Clear();
+			command.AlternateName.Clear();
 
-            response = $"Cleared all alternative names for '{command.Name}'";
-        }
+			response = $"Cleared all alternative names for '{command.Name}'";
+		}
 
-        if (oldAlternateNames.SetEquals(command.AlternateName))
-        {
-            return Result.Fail<string>("Nothing changed");
-        }
+		if (oldAlternateNames.SetEquals(command.AlternateName))
+		{
+			return Result.Fail<string>("Nothing changed");
+		}
 
-        return response ?? Result.Fail<string>("Unknown subcommand.");
-    }
+		return response ?? Result.Fail<string>("Unknown subcommand.");
+	}
 }

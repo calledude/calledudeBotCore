@@ -8,22 +8,22 @@ namespace calledudeBotCore.Tests.Services;
 
 public class UserSessionServiceTests
 {
-    private readonly IUserSessionRepository _userSessionRepository;
-    private readonly UserSessionService _userSessionService;
+	private readonly IUserSessionRepository _userSessionRepository;
+	private readonly UserSessionService _userSessionService;
 
-    public UserSessionServiceTests()
-    {
-        _userSessionRepository = Substitute.For<IUserSessionRepository>();
-        _userSessionService = new UserSessionService(_userSessionRepository);
-    }
+	public UserSessionServiceTests()
+	{
+		_userSessionRepository = Substitute.For<IUserSessionRepository>();
+		_userSessionService = new UserSessionService(_userSessionRepository);
+	}
 
-    [Fact]
-    public async Task GetUserSession_Calls_Repository()
-    {
-        const string username = "calledude";
-        await _userSessionService.GetUserSessions(username);
+	[Fact]
+	public async Task GetUserSession_Calls_Repository()
+	{
+		const string username = "calledude";
+		await _userSessionService.GetUserSessions(username);
 
-        await _userSessionRepository.Received(1).GetUserSessions(username);
-        Assert.Single(_userSessionRepository.ReceivedCalls());
-    }
+		await _userSessionRepository.Received(1).GetUserSessions(username);
+		Assert.Single(_userSessionRepository.ReceivedCalls());
+	}
 }

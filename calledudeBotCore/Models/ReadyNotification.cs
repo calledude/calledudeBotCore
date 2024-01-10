@@ -5,10 +5,10 @@ namespace calledudeBot.Models;
 
 public class ReadyNotification : INotification
 {
-    public IHostedService Bot { get; }
+	public IHostedService Bot { get; }
 
-    public ReadyNotification(IHostedService bot)
-    {
-        Bot = bot;
-    }
+	public ReadyNotification(IHostedService bot)
+	{
+		Bot = bot;
+	}
 }

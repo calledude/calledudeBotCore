@@ -9,197 +9,197 @@ namespace calledudeBotCore.Tests.Commands;
 
 public class HelpCommandTests
 {
-    [Fact]
-    public async Task SpecificCommand_DoesNotExist_ErrorResponse()
-    {
-        var (helpCommand, _) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
-        var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent("!doesNotExist");
+	[Fact]
+	public async Task SpecificCommand_DoesNotExist_ErrorResponse()
+	{
+		var (helpCommand, _) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
+		var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent("!doesNotExist");
 
-        var response = await helpCommand.Handle(commandParameter);
+		var response = await helpCommand.Handle(commandParameter);
 
-        Assert.Equal("You ok there bud? Try again.", response);
-    }
+		Assert.Equal("You ok there bud? Try again.", response);
+	}
 
-    [Fact]
-    public async Task SpecificCommand_Elevated_Exists_NonModerator_ErrorResponse()
-    {
-        var (helpCommand, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
+	[Fact]
+	public async Task SpecificCommand_Elevated_Exists_NonModerator_ErrorResponse()
+	{
+		var (helpCommand, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
 
-        var commandMock = Substitute.For<Command>();
-        const string commandName = "!someCommand";
-        commandMock.Name.Returns(commandName);
-        commandMock.RequiresMod.Returns(true);
+		var commandMock = Substitute.For<Command>();
+		const string commandName = "!someCommand";
+		commandMock.Name.Returns(commandName);
+		commandMock.RequiresMod.Returns(true);
 
-        commandContainer.Value.Commands.Add(commandMock);
+		commandContainer.Value.Commands.Add(commandMock);
 
-        var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent(commandName);
-        var response = await helpCommand.Handle(commandParameter);
+		var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent(commandName);
+		var response = await helpCommand.Handle(commandParameter);
 
-        Assert.Equal("You ok there bud? Try again.", response);
-    }
+		Assert.Equal("You ok there bud? Try again.", response);
+	}
 
-    [Fact]
-    public async Task SpecificCommand_Elevated_Exists_IsModerator()
-    {
-        var (helpCommand, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
+	[Fact]
+	public async Task SpecificCommand_Elevated_Exists_IsModerator()
+	{
+		var (helpCommand, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
 
-        var commandMock = Substitute.For<Command>();
-        const string commandName = "!someCommand";
-        commandMock.Name.Returns(commandName);
-        commandMock.RequiresMod.Returns(true);
+		var commandMock = Substitute.For<Command>();
+		const string commandName = "!someCommand";
+		commandMock.Name.Returns(commandName);
+		commandMock.RequiresMod.Returns(true);
 
-        commandContainer.Value.Commands.Add(commandMock);
+		commandContainer.Value.Commands.Add(commandMock);
 
-        var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageAndUser(commandName, UserObjectMother.EmptyMod);
-        var response = await helpCommand.Handle(commandParameter);
+		var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageAndUser(commandName, UserObjectMother.EmptyMod);
+		var response = await helpCommand.Handle(commandParameter);
 
-        Assert.Equal($"Command '{commandName}' has no description.", response);
-    }
+		Assert.Equal($"Command '{commandName}' has no description.", response);
+	}
 
-    [Fact]
-    public async Task SpecificCommand_NoElevationRequired_Exists_NonModerator()
-    {
-        var (helpCommand, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
+	[Fact]
+	public async Task SpecificCommand_NoElevationRequired_Exists_NonModerator()
+	{
+		var (helpCommand, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
 
-        var commandMock = Substitute.For<Command>();
-        const string commandName = "!someCommand";
-        commandMock.Name.Returns(commandName);
-        commandMock.RequiresMod.Returns(false);
+		var commandMock = Substitute.For<Command>();
+		const string commandName = "!someCommand";
+		commandMock.Name.Returns(commandName);
+		commandMock.RequiresMod.Returns(false);
 
-        commandContainer.Value.Commands.Add(commandMock);
+		commandContainer.Value.Commands.Add(commandMock);
 
-        var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent(commandName);
-        var response = await helpCommand.Handle(commandParameter);
+		var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent(commandName);
+		var response = await helpCommand.Handle(commandParameter);
 
-        Assert.Equal($"Command '{commandName}' has no description.", response);
-    }
+		Assert.Equal($"Command '{commandName}' has no description.", response);
+	}
 
-    [Fact]
-    public async Task SpecificCommand_With_AlternateNames()
-    {
-        var (helpCommand, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
+	[Fact]
+	public async Task SpecificCommand_With_AlternateNames()
+	{
+		var (helpCommand, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
 
-        const string commandName = "!someCommand";
+		const string commandName = "!someCommand";
 
-        var command = new Command()
-        {
-            Name = commandName,
-            AlternateName =
-            [
-                "!test",
-                "!something"
-            ]
-        };
+		var command = new Command()
+		{
+			Name = commandName,
+			AlternateName =
+			[
+				"!test",
+				"!something"
+			]
+		};
 
-        commandContainer.Value.Commands.Add(command);
+		commandContainer.Value.Commands.Add(command);
 
-        var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent(commandName);
-        var response = await helpCommand.Handle(commandParameter);
+		var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent(commandName);
+		var response = await helpCommand.Handle(commandParameter);
 
-        var alts = string.Join("/", command.AlternateName);
-        Assert.Equal($"Command '{commandName}/{alts}' has no description.", response);
-    }
+		var alts = string.Join("/", command.AlternateName);
+		Assert.Equal($"Command '{commandName}/{alts}' has no description.", response);
+	}
 
-    [Fact]
-    public async Task SpecificCommand_With_DescriptionAndAlternateNames()
-    {
-        var (helpCommand, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
+	[Fact]
+	public async Task SpecificCommand_With_DescriptionAndAlternateNames()
+	{
+		var (helpCommand, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
 
-        const string commandName = "!someCommand";
-        const string description = "some nice description";
-        var command = new Command()
-        {
-            Name = commandName,
-            AlternateName =
-            [
-                "!test",
-                "!something"
-            ],
-            Description = description
-        };
+		const string commandName = "!someCommand";
+		const string description = "some nice description";
+		var command = new Command()
+		{
+			Name = commandName,
+			AlternateName =
+			[
+				"!test",
+				"!something"
+			],
+			Description = description
+		};
 
-        commandContainer.Value.Commands.Add(command);
+		commandContainer.Value.Commands.Add(command);
 
-        var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent(commandName);
-        var response = await helpCommand.Handle(commandParameter);
+		var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent(commandName);
+		var response = await helpCommand.Handle(commandParameter);
 
-        var alts = string.Join("/", command.AlternateName);
-        Assert.Equal($"Command '{commandName}/{alts}' has the description '{description}'", response);
-    }
+		var alts = string.Join("/", command.AlternateName);
+		Assert.Equal($"Command '{commandName}/{alts}' has the description '{description}'", response);
+	}
 
-    [Fact]
-    public async Task SpecificCommand_With_Description()
-    {
-        var (helpCommand, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
+	[Fact]
+	public async Task SpecificCommand_With_Description()
+	{
+		var (helpCommand, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
 
-        const string commandName = "!someCommand";
-        const string description = "some nice description";
-        var command = new Command()
-        {
-            Name = commandName,
-            Description = description
-        };
+		const string commandName = "!someCommand";
+		const string description = "some nice description";
+		var command = new Command()
+		{
+			Name = commandName,
+			Description = description
+		};
 
-        commandContainer.Value.Commands.Add(command);
+		commandContainer.Value.Commands.Add(command);
 
-        var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent(commandName);
-        var response = await helpCommand.Handle(commandParameter);
+		var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent(commandName);
+		var response = await helpCommand.Handle(commandParameter);
 
-        Assert.Equal($"Command '{commandName}' has the description '{description}'", response);
-    }
+		Assert.Equal($"Command '{commandName}' has the description '{description}'", response);
+	}
 
-    [Fact]
-    public async Task SpecificCommand_Uses_NonPrefixed_Word()
-    {
-        var (helpCommand, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
+	[Fact]
+	public async Task SpecificCommand_Uses_NonPrefixed_Word()
+	{
+		var (helpCommand, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
 
-        const string commandName = "someCommand";
+		const string commandName = "someCommand";
 
-        var command = new Command()
-        {
-            Name = "!" + commandName,
-        };
+		var command = new Command()
+		{
+			Name = "!" + commandName,
+		};
 
-        commandContainer.Value.Commands.Add(command);
+		commandContainer.Value.Commands.Add(command);
 
-        var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent(commandName);
-        var response = await helpCommand.Handle(commandParameter);
+		var commandParameter = CommandParameterObjectMother.CreateWithPrefixedMessageContent(commandName);
+		var response = await helpCommand.Handle(commandParameter);
 
-        Assert.Equal($"Command '!{commandName}' has no description.", response);
-    }
+		Assert.Equal($"Command '!{commandName}' has no description.", response);
+	}
 
-    [Fact]
-    public async Task NonSpecificCommand()
-    {
-        var (helpCommand, _) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
-        var response = await helpCommand.Handle(CommandParameterObjectMother.EmptyWithPrefixedWord);
+	[Fact]
+	public async Task NonSpecificCommand()
+	{
+		var (helpCommand, _) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
+		var response = await helpCommand.Handle(CommandParameterObjectMother.EmptyWithPrefixedWord);
 
-        Assert.Equal("These are the commands you can use: !help", response);
-    }
+		Assert.Equal("These are the commands you can use: !help", response);
+	}
 
-    [Theory]
-    [InlineData(true, "!help", "!whatever", "!hello")]
-    [InlineData(false, "!help", "!hello")]
-    public async Task NonSpecificCommand_DoesNotShowElevatedCommands(bool isMod, params string[] expectedCommands)
-    {
-        var (helpCommand, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
+	[Theory]
+	[InlineData(true, "!help", "!whatever", "!hello")]
+	[InlineData(false, "!help", "!hello")]
+	public async Task NonSpecificCommand_DoesNotShowElevatedCommands(bool isMod, params string[] expectedCommands)
+	{
+		var (helpCommand, commandContainer) = CommandContainerObjectMother.CreateWithSpecialCommand((container) => new HelpCommand(container));
 
-        var commandMock = Substitute.For<Command>();
-        commandMock.RequiresMod.Returns(true);
-        commandMock.Name.Returns("!whatever");
+		var commandMock = Substitute.For<Command>();
+		commandMock.RequiresMod.Returns(true);
+		commandMock.Name.Returns("!whatever");
 
-        const string secondCommandName = "!hello";
-        var secondCommand = new Command()
-        {
-            Name = secondCommandName
-        };
+		const string secondCommandName = "!hello";
+		var secondCommand = new Command()
+		{
+			Name = secondCommandName
+		};
 
-        commandContainer.Value.Commands.Add(commandMock);
-        commandContainer.Value.Commands.Add(secondCommand);
+		commandContainer.Value.Commands.Add(commandMock);
+		commandContainer.Value.Commands.Add(secondCommand);
 
-        var response = await helpCommand.Handle(CommandParameterObjectMother.CreateWithEmptyMessageAndUser(UserObjectMother.Create(string.Empty, isMod)));
+		var response = await helpCommand.Handle(CommandParameterObjectMother.CreateWithEmptyMessageAndUser(UserObjectMother.Create(string.Empty, isMod)));
 
-        var commands = string.Join(" » ", expectedCommands);
-        Assert.Equal($"These are the commands you can use: {commands}", response);
-    }
+		var commands = string.Join(" » ", expectedCommands);
+		Assert.Equal($"These are the commands you can use: {commands}", response);
+	}
 }
