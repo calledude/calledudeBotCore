@@ -49,6 +49,7 @@ public static class ServiceCollectionExtensions
 			.AddSingleton<IStreamingState, StreamingState>()
 			.AddSingleton<IUserActivityService, UserActivityService>()
 			.AddSingleton<IDiscordSocketClient, DiscordSocketClientWrapper>()
+			.AddSingleton<IWorkItemQueueService, WorkItemQueueService>()
 			.AddTransient<IStreamMonitor, StreamMonitor>()
 			.AddTransient<IUserSessionService, UserSessionService>()
 			.AddTransient<IIrcClient, IrcClient>()

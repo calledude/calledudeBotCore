@@ -1,4 +1,5 @@
 ﻿using calledudeBot.Chat;
+using calledudeBot.Services;
 using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
 using System;
@@ -56,13 +57,14 @@ public sealed class IrcClient : IIrcClient
 
 	private readonly ILogger<IrcClient> _logger;
 	private readonly ITcpClient _tcpClient;
-
+	private readonly IWorkItemQueueService _workItemQueueService;
 	private static readonly AsyncMonitor _lock = new();
 
-	public IrcClient(ILogger<IrcClient> logger, ITcpClient tcpClient)
+	public IrcClient(ILogger<IrcClient> logger, ITcpClient tcpClient, IWorkItemQueueService workItemQueueService)
 	{
 		_logger = logger;
 		_tcpClient = tcpClient;
+		_workItemQueueService = workItemQueueService;
 		_tcpClient.Port = 6667;
 	}
 
@@ -228,25 +230,30 @@ public sealed class IrcClient : IIrcClient
 				return;
 
 			var (user, messageContent) = IrcMessage.ParseMessage(buffer, ranges, splitCount);
-
-			_ = MessageReceived(messageContent, user);
+			_workItemQueueService.EnqueueItem(MessageReceived(messageContent, user));
 		}
 		else if (buffer[ranges[1]].SequenceEqual("JOIN"))
 		{
+			if (ChatUserJoined is null)
+				return;
+
 			var user = IrcMessage.ParseUser(buffer);
-			_ = ChatUserJoined?.Invoke(user);
+			_workItemQueueService.EnqueueItem(ChatUserJoined(user));
 		}
 		else if (buffer[ranges[1]].SequenceEqual("PART"))
 		{
+			if (ChatUserLeft is null)
+				return;
+
 			var user = IrcMessage.ParseUser(buffer);
-			_ = ChatUserLeft?.Invoke(user);
+			_workItemQueueService.EnqueueItem(ChatUserLeft(user));
 		}
 		else
 		{
 			if (UnhandledMessage is null)
 				return;
 
-			_ = UnhandledMessage(buffer.ToString());
+			_workItemQueueService.EnqueueItem(UnhandledMessage(buffer.ToString()));
 		}
 	}
 
