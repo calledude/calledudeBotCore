@@ -147,7 +147,7 @@ public sealed class IrcClient : IIrcClient
 		if (MessageFilters is null)
 			return false;
 
-		return MessageFilters.Any(x => buffer.Contains(x));
+		return MessageFilters.Any(buffer.Contains);
 	}
 
 	private async IAsyncEnumerable<string?> MessageLoop(Func<bool> loopCondition, [EnumeratorCancellation] CancellationToken cancellationToken = default)

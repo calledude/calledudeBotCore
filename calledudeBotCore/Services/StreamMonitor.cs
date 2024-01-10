@@ -96,7 +96,7 @@ public sealed class StreamMonitor : IStreamMonitor
 
 		if (status.IsActive)
 		{
-			_streamingState.StreamStarted = DateTime.Now.AddMilliseconds(-status.Duration);
+			_streamingState.StreamStarted = DateTime.UtcNow.AddMilliseconds(-status.Duration);
 			//_streamStatusTimer.Start(CheckDiscordStatus, _cancellationToken);
 		}
 	}

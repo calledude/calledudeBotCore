@@ -23,7 +23,7 @@ public class UserSessionRepository : IUserSessionRepository
 
 	public async Task TrackUserSession(Activity.UserActivity entity)
 	{
-		var endTime = DateTime.Now;
+		var endTime = DateTime.UtcNow;
 
 		var session = new UserSession
 		{

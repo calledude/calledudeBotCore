@@ -1,6 +1,5 @@
 ﻿using calledudeBot.Models;
 using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -25,7 +24,7 @@ public sealed class UptimeCommand : SpecialCommand
 		if (wentLiveAt == default)
 			return Task.FromResult("Streamer isn't live.");
 
-		var timeSinceLive = DateTime.Now - wentLiveAt;
+		var timeSinceLive = DateTime.UtcNow - wentLiveAt;
 
 		if (timeSinceLive.TotalSeconds < 5)
 			return Task.FromResult("The stream has just started.");

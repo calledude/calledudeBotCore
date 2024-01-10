@@ -53,7 +53,7 @@ public sealed class MessageRelayService : INotificationHandler<RelayNotification
 
 	private async Task TryRelay(RelayNotification<IrcMessage> notification)
 	{
-		var timeElapsedSinceLastMessage = DateTime.Now - _relayState.LastMessage;
+		var timeElapsedSinceLastMessage = DateTime.UtcNow - _relayState.LastMessage;
 		var minimumWait = TimeSpan.FromMilliseconds(500);
 		if (timeElapsedSinceLastMessage <= minimumWait)
 		{
@@ -64,7 +64,7 @@ public sealed class MessageRelayService : INotificationHandler<RelayNotification
 		}
 
 		await Relay(notification);
-		_relayState.LastMessage = DateTime.Now;
+		_relayState.LastMessage = DateTime.UtcNow;
 	}
 
 	private async Task Relay(RelayNotification<IrcMessage> notification)

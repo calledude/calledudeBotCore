@@ -9,5 +9,5 @@ public interface IRelayState
 
 public class RelayState : IRelayState
 {
-	public DateTime LastMessage { get; set; } = DateTime.Now;
+	public DateTime LastMessage { get; set; } = DateTime.UtcNow;
 }

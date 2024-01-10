@@ -19,214 +19,217 @@ namespace calledudeBotCore.Tests.Bots;
 
 public class BotTests
 {
-    private static readonly Logger<CommandService<IrcMessage>> _commandLogger = LoggerObjectMother.NullLoggerFor<CommandService<IrcMessage>>();
-    private static readonly Logger<IrcClient> _ircClientLogger = LoggerObjectMother.NullLoggerFor<IrcClient>();
-    private static readonly Logger<TwitchBot> _twitchLogger = LoggerObjectMother.NullLoggerFor<TwitchBot>();
+	private static readonly Logger<CommandService<IrcMessage>> _commandLogger = LoggerObjectMother.NullLoggerFor<CommandService<IrcMessage>>();
+	private static readonly Logger<IrcClient> _ircClientLogger = LoggerObjectMother.NullLoggerFor<IrcClient>();
+	private static readonly Logger<TwitchBot> _twitchLogger = LoggerObjectMother.NullLoggerFor<TwitchBot>();
 
-    [Fact]
-    public async Task Mods_Only_Evaluates_Once_Per_Context()
-    {
-        var isModInvokeCount = 0;
+	[Fact]
+	public async Task Mods_Only_Evaluates_Once_Per_Context()
+	{
+		var isModInvokeCount = 0;
 
-        var fakeCommands = Enumerable
-            .Range(1, 5)
-            .Select(x =>
-            {
-                var cmdMock = Substitute.For<SpecialCommand<CommandParameter>>();
+		var fakeCommands = Enumerable
+			.Range(1, 5)
+			.Select(x =>
+			{
+				var cmdMock = Substitute.For<SpecialCommand<CommandParameter>>();
 
-                cmdMock.RequiresMod.Returns(true);
+				cmdMock.RequiresMod.Returns(true);
 
-                cmdMock.Name.Returns("!" + x);
+				cmdMock.Name.Returns("!" + x);
 
-                return cmdMock;
-            }).ToArray();
+				return cmdMock;
+			}).ToArray();
 
-        var commandContainer = CommandContainerObjectMother.CreateLazy(fakeCommands);
+		var commandContainer = CommandContainerObjectMother.CreateLazy(fakeCommands);
 
-        var botMock = Substitute.For<IMessageBot<IrcMessage>>();
-        var twitchCommandService = new CommandService<IrcMessage>(_commandLogger, botMock, commandContainer);
+		var botMock = Substitute.For<IMessageBot<IrcMessage>>();
+		var twitchCommandService = new CommandService<IrcMessage>(_commandLogger, botMock, commandContainer);
 
-        var message = new IrcMessage
-        {
-            Content = "",
-            Sender = new User("", () =>
-            {
-                isModInvokeCount++;
-                return Task.FromResult(true);
-            })
-        };
+		var message = new IrcMessage
+		{
+			Content = "",
+			Sender = new User("", () =>
+			{
+				isModInvokeCount++;
+				return Task.FromResult(true);
+			})
+		};
 
-        var commandExecutions = fakeCommands.Select(x =>
-        {
-            message = message with { Content = x.Name! };
-            return twitchCommandService.Handle(message, CancellationToken.None);
-        });
+		var commandExecutions = fakeCommands.Select(x =>
+		{
+			message = message with { Content = x.Name! };
+			return twitchCommandService.Handle(message, CancellationToken.None);
+		});
 
-        await Task.WhenAll(commandExecutions);
+		await Task.WhenAll(commandExecutions);
 
-        Assert.Equal(1, isModInvokeCount);
-    }
+		Assert.Equal(1, isModInvokeCount);
+	}
 
-    [Fact]
-    public async Task Mods_Are_Case_Insensitive()
-    {
-        var twitch = new TwitchBot(Substitute.For<IIrcClient>(), new TwitchBotConfig { TwitchChannel = "#calledude" }, null!, _twitchLogger);
-        await twitch.HandleRawMessage(":tmi.twitch.tv NOTICE #calledude :The moderators of this channel are: CALLEDUDE, calLEDuDeBoT");
-        var mods = await twitch.GetMods();
+	[Fact]
+	public async Task Mods_Are_Case_Insensitive()
+	{
+		var twitch = new TwitchBot(Substitute.For<IIrcClient>(), new TwitchBotConfig { TwitchChannel = "#calledude" }, null!, _twitchLogger);
+		await twitch.HandleRawMessage(":tmi.twitch.tv NOTICE #calledude :The moderators of this channel are: CALLEDUDE, calLEDuDeBoT");
+		var mods = await twitch.GetMods();
 
-        Assert.Equal(2, mods.Count);
-        Assert.Contains("calledude", mods);
-        Assert.Contains("calledudebot", mods);
-    }
+		Assert.Equal(2, mods.Count);
+		Assert.Contains("calledude", mods);
+		Assert.Contains("calledudebot", mods);
+	}
 
-    [Fact]
-    public async Task CanHandleMultipleMessagesSimultaneously()
-    {
-        var tcpClient = Substitute.For<ITcpClient>();
-        tcpClient
-            .ReadLineAsync(Arg.Any<CancellationToken>())
-            .Returns(
-                "this 366 is a success code",
-                ":someUser!someUser@someUser.tmi.twitch.tv PRIVMSG #calledude :!test",
-                ":tmi.twitch.tv NOTICE #calledude :The moderators of this channel are: someUser"
-            );
+	[Fact]
+	public async Task CanHandleMultipleMessagesSimultaneously()
+	{
+		var tcpClient = Substitute.For<ITcpClient>();
+		tcpClient
+			.ReadLineAsync(Arg.Any<CancellationToken>())
+			.Returns(
+				"this 366 is a success code",
+				":someUser!someUser@someUser.tmi.twitch.tv PRIVMSG #calledude :!test",
+				":tmi.twitch.tv NOTICE #calledude :The moderators of this channel are: someUser"
+			);
 
-        var ircClient = new IrcClient(_ircClientLogger, tcpClient);
+		// TODO: This test doesn't really make sense anymore
+		var workItemQueueService = Substitute.For<IWorkItemQueueService>();
 
-        var messageDispatcher = Substitute.For<IMessageDispatcher>();
-        var twitch = new TwitchBot(ircClient, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher, _twitchLogger);
+		var ircClient = new IrcClient(_ircClientLogger, tcpClient, workItemQueueService);
 
-        var isModeratorChecked = new ManualResetEventSlim(false);
-        messageDispatcher
-            .PublishAsync(Arg.Any<IrcMessage>(), Arg.Any<CancellationToken>())
-            .Returns(async call =>
-            {
-                // TODO: INotification?
-                var message = call.Arg<IrcMessage>();
-                await message.Sender!.IsModerator();
-                isModeratorChecked.Set();
-            });
+		var messageDispatcher = Substitute.For<IMessageDispatcher>();
+		var twitch = new TwitchBot(ircClient, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher, _twitchLogger);
 
-        await twitch.StartAsync(CancellationToken.None);
+		var isModeratorChecked = new ManualResetEventSlim(false);
+		messageDispatcher
+			.PublishAsync(Arg.Any<IrcMessage>(), Arg.Any<CancellationToken>())
+			.Returns(async call =>
+			{
+				// TODO: INotification?
+				var message = call.Arg<IrcMessage>();
+				await message.Sender!.IsModerator();
+				isModeratorChecked.Set();
+			});
 
-        var modSuccessfullyRead = isModeratorChecked.Wait(500);
-        Assert.True(modSuccessfullyRead);
-    }
+		await twitch.StartAsync(CancellationToken.None);
 
-    [Fact]
-    public async Task BroadcasterIsMod()
-    {
-        IrcMessage? message = null;
-        var ircClient = Substitute.For<IIrcClient>();
-        var messageDispatcher = Substitute.For<IMessageDispatcher>();
-        messageDispatcher
-            .PublishAsync(Arg.Do<IrcMessage>(x => message = x), Arg.Any<CancellationToken>())
-            .Returns(Task.CompletedTask);
+		var modSuccessfullyRead = isModeratorChecked.Wait(500);
+		Assert.True(modSuccessfullyRead);
+	}
 
-        var twitch = new TwitchBot(ircClient, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher, _twitchLogger);
-        await twitch.HandleRawMessage(":tmi.twitch.tv NOTICE #calledude :The moderators of this channel are: BogusUser");
-        await twitch.HandleMessage("hello", "calledude");
+	[Fact]
+	public async Task BroadcasterIsMod()
+	{
+		IrcMessage? message = null;
+		var ircClient = Substitute.For<IIrcClient>();
+		var messageDispatcher = Substitute.For<IMessageDispatcher>();
+		messageDispatcher
+			.PublishAsync(Arg.Do<IrcMessage>(x => message = x), Arg.Any<CancellationToken>())
+			.Returns(Task.CompletedTask);
 
-        var mods = await twitch.GetMods();
-        Assert.DoesNotContain(mods, x => x == "calledude");
-        Assert.NotNull(message);
-        Assert.True(await message.Sender!.IsModerator());
-    }
+		var twitch = new TwitchBot(ircClient, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher, _twitchLogger);
+		await twitch.HandleRawMessage(":tmi.twitch.tv NOTICE #calledude :The moderators of this channel are: BogusUser");
+		await twitch.HandleMessage("hello", "calledude");
 
-    [Theory]
-    [InlineData(ParticipationType.Join)]
-    [InlineData(ParticipationType.Leave)]
-    public async Task UserParticipationEventIsRaised(ParticipationType participationType)
-    {
-        var ircClient = Substitute.For<IIrcClient>();
-        var messageDispatcher = Substitute.For<IMessageDispatcher>();
+		var mods = await twitch.GetMods();
+		Assert.DoesNotContain(mods, x => x == "calledude");
+		Assert.NotNull(message);
+		Assert.True(await message.Sender!.IsModerator());
+	}
 
-        UserParticipationNotification? userParticipation = null;
-        messageDispatcher
-            .PublishAsync(Arg.Do<UserParticipationNotification>(x => userParticipation = x), Arg.Any<CancellationToken>())
-            .ReturnsForAnyArgs(Task.CompletedTask);
+	[Theory]
+	[InlineData(ParticipationType.Join)]
+	[InlineData(ParticipationType.Leave)]
+	public async Task UserParticipationEventIsRaised(ParticipationType participationType)
+	{
+		var ircClient = Substitute.For<IIrcClient>();
+		var messageDispatcher = Substitute.For<IMessageDispatcher>();
 
-        var twitch = new TwitchBot(ircClient, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher, _twitchLogger);
-        await twitch.HandleUserParticipation("calledude", participationType, "");
+		UserParticipationNotification? userParticipation = null;
+		messageDispatcher
+			.PublishAsync(Arg.Do<UserParticipationNotification>(x => userParticipation = x), Arg.Any<CancellationToken>())
+			.ReturnsForAnyArgs(Task.CompletedTask);
 
-        await messageDispatcher.Received(1).PublishAsync(Arg.Any<UserParticipationNotification>(), Arg.Any<CancellationToken>());
+		var twitch = new TwitchBot(ircClient, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher, _twitchLogger);
+		await twitch.HandleUserParticipation("calledude", participationType, "");
 
-        var calls = messageDispatcher.ReceivedCalls();
-        Assert.Single(calls);
+		await messageDispatcher.Received(1).PublishAsync(Arg.Any<UserParticipationNotification>(), Arg.Any<CancellationToken>());
 
-        Assert.NotNull(userParticipation);
-        Assert.Equal(participationType, userParticipation.ParticipationType);
-        Assert.Equal("calledude", userParticipation.User.Name);
-    }
+		var calls = messageDispatcher.ReceivedCalls();
+		Assert.Single(calls);
 
-    [Fact]
-    public async Task OnReady_RegistersCapabilities_AndReadyNotification()
-    {
-        var ircClient = Substitute.For<IIrcClient>();
-        var messageDispatcher = Substitute.For<IMessageDispatcher>();
+		Assert.NotNull(userParticipation);
+		Assert.Equal(participationType, userParticipation.ParticipationType);
+		Assert.Equal("calledude", userParticipation.User.Name);
+	}
 
-        ReadyNotification? readyNotification = null;
-        messageDispatcher
-            .PublishAsync(Arg.Do<ReadyNotification>(x => readyNotification = x), Arg.Any<CancellationToken>())
-            .ReturnsForAnyArgs(Task.CompletedTask);
+	[Fact]
+	public async Task OnReady_RegistersCapabilities_AndReadyNotification()
+	{
+		var ircClient = Substitute.For<IIrcClient>();
+		var messageDispatcher = Substitute.For<IMessageDispatcher>();
 
-        var twitch = new TwitchBot(ircClient, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher, null!);
-        await twitch.OnReady();
+		ReadyNotification? readyNotification = null;
+		messageDispatcher
+			.PublishAsync(Arg.Do<ReadyNotification>(x => readyNotification = x), Arg.Any<CancellationToken>())
+			.ReturnsForAnyArgs(Task.CompletedTask);
 
-        await messageDispatcher.Received(1).PublishAsync(Arg.Any<ReadyNotification>(), Arg.Any<CancellationToken>());
-        var calls = messageDispatcher.ReceivedCalls();
-        Assert.Single(calls);
+		var twitch = new TwitchBot(ircClient, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher, null!);
+		await twitch.OnReady();
 
-        await ircClient.Received(1).WriteLine(Arg.Is<string>(y => y == "CAP REQ :twitch.tv/commands"));
-        await ircClient.Received(1).WriteLine(Arg.Is<string>(y => y == "CAP REQ :twitch.tv/membership"));
+		await messageDispatcher.Received(1).PublishAsync(Arg.Any<ReadyNotification>(), Arg.Any<CancellationToken>());
+		var calls = messageDispatcher.ReceivedCalls();
+		Assert.Single(calls);
 
-        Assert.NotNull(readyNotification);
-        Assert.Equal(twitch, readyNotification.Bot);
-    }
+		await ircClient.Received(1).WriteLine(Arg.Is<string>(y => y == "CAP REQ :twitch.tv/commands"));
+		await ircClient.Received(1).WriteLine(Arg.Is<string>(y => y == "CAP REQ :twitch.tv/membership"));
 
-    [Fact]
-    public void UserJoinIsPublished()
-    {
-        var ircClient = Substitute.For<IIrcClient>();
+		Assert.NotNull(readyNotification);
+		Assert.Equal(twitch, readyNotification.Bot);
+	}
 
-        UserParticipationNotification? actualNotification = null;
-        var messageDispatcher = Substitute.For<IMessageDispatcher>();
-        messageDispatcher
-            .PublishAsync(Arg.Do<UserParticipationNotification>(x => actualNotification = x), Arg.Any<CancellationToken>())
-            .Returns(Task.CompletedTask);
+	[Fact]
+	public void UserJoinIsPublished()
+	{
+		var ircClient = Substitute.For<IIrcClient>();
 
-        //Subscribes to Leave/Join events
-        _ = new TwitchBot(ircClient, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher, _twitchLogger);
+		UserParticipationNotification? actualNotification = null;
+		var messageDispatcher = Substitute.For<IMessageDispatcher>();
+		messageDispatcher
+			.PublishAsync(Arg.Do<UserParticipationNotification>(x => actualNotification = x), Arg.Any<CancellationToken>())
+			.Returns(Task.CompletedTask);
 
-        const string username = "calledude";
-        ircClient.ChatUserJoined += Raise.Event<Func<string, Task>>(username);
+		//Subscribes to Leave/Join events
+		_ = new TwitchBot(ircClient, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher, _twitchLogger);
 
-        Assert.NotNull(actualNotification);
-        Assert.Equal(username, actualNotification.User.Name);
-        Assert.Equal(ParticipationType.Join, actualNotification.ParticipationType);
-        Assert.Equal(DateTime.Now, actualNotification.When, TimeSpan.FromSeconds(1));
-    }
+		const string username = "calledude";
+		ircClient.ChatUserJoined += Raise.Event<Func<string, Task>>(username);
 
-    [Fact]
-    public void UserLeaveIsPublished()
-    {
-        var ircClient = Substitute.For<IIrcClient>();
+		Assert.NotNull(actualNotification);
+		Assert.Equal(username, actualNotification.User.Name);
+		Assert.Equal(ParticipationType.Join, actualNotification.ParticipationType);
+		Assert.Equal(DateTime.UtcNow, actualNotification.When, TimeSpan.FromSeconds(1));
+	}
 
-        UserParticipationNotification? actualNotification = null;
-        var messageDispatcher = Substitute.For<IMessageDispatcher>();
-        messageDispatcher
-            .PublishAsync(Arg.Do<UserParticipationNotification>(x => actualNotification = x), Arg.Any<CancellationToken>())
-            .Returns(Task.CompletedTask);
+	[Fact]
+	public void UserLeaveIsPublished()
+	{
+		var ircClient = Substitute.For<IIrcClient>();
 
-        //Subscribes to Leave/Join events
-        _ = new TwitchBot(ircClient, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher, _twitchLogger);
+		UserParticipationNotification? actualNotification = null;
+		var messageDispatcher = Substitute.For<IMessageDispatcher>();
+		messageDispatcher
+			.PublishAsync(Arg.Do<UserParticipationNotification>(x => actualNotification = x), Arg.Any<CancellationToken>())
+			.Returns(Task.CompletedTask);
 
-        const string username = "calledude";
-        ircClient.ChatUserLeft += Raise.Event<Func<string, Task>>(username);
+		//Subscribes to Leave/Join events
+		_ = new TwitchBot(ircClient, new TwitchBotConfig { TwitchChannel = "#calledude" }, messageDispatcher, _twitchLogger);
 
-        Assert.NotNull(actualNotification);
-        Assert.Equal(username, actualNotification.User.Name);
-        Assert.Equal(ParticipationType.Leave, actualNotification.ParticipationType);
-        Assert.Equal(DateTime.Now, actualNotification.When, TimeSpan.FromSeconds(1));
-    }
+		const string username = "calledude";
+		ircClient.ChatUserLeft += Raise.Event<Func<string, Task>>(username);
+
+		Assert.NotNull(actualNotification);
+		Assert.Equal(username, actualNotification.User.Name);
+		Assert.Equal(ParticipationType.Leave, actualNotification.ParticipationType);
+		Assert.Equal(DateTime.UtcNow, actualNotification.When, TimeSpan.FromSeconds(1));
+	}
 }
