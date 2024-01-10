@@ -51,8 +51,7 @@ public class DiscordUserWatcher : IDiscordUserWatcher
 
 	public async Task<bool> TryWaitForUserStreamToStart()
 	{
-		var announceChannel = _discordClient.GetMessageChannel(_announceChannelID) as ITextChannel;
-		if (announceChannel is null)
+		if (_discordClient.GetMessageChannel(_announceChannelID) is not ITextChannel announceChannel)
 		{
 			_logger.LogWarning("Invalid channel. Will not announce when stream goes live.");
 			return false;
@@ -100,7 +99,8 @@ public class DiscordUserWatcher : IDiscordUserWatcher
 	//In that case we assume that the bot has been restarted (for whatever reason)
 	private bool CurrentStreamHasBeenAnnounced(IEnumerable<IMessage> messages, StreamingGame activity, out string announcementMessage)
 	{
-		var twitchUsername = activity.Url.Split('/').Last();
+		var userNameIndex = activity.Url.LastIndexOf('/') + 1;
+		var twitchUsername = activity.Url[userNameIndex..];
 		var msg = $"🔴 **{twitchUsername}** is now **LIVE**\n- Title: **{activity.Details}**\n- Watch at: {activity.Url}";
 		announcementMessage = msg;
 		return messages.Any(m =>

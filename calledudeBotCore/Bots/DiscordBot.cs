@@ -47,22 +47,22 @@ public sealed class DiscordBot : Bot<DiscordMessage>
 		switch (message.Severity)
 		{
 			case LogSeverity.Critical:
-				_logger.LogCritical(message.Exception, message.Message ?? "An exception bubbled up: ");
+				_logger.LogCritical(message.Exception, "An exception bubbled up: {message}", message.Message);
 				break;
 			case LogSeverity.Debug:
-				_logger.LogDebug(message.ToString(prependTimestamp: false));
+				_logger.LogDebug("{message}", message.ToString(prependTimestamp: false));
 				break;
 			case LogSeverity.Warning:
-				_logger.LogWarning(message.ToString(prependTimestamp: false));
+				_logger.LogWarning("{message}", message.ToString(prependTimestamp: false));
 				break;
 			case LogSeverity.Error:
-				_logger.LogError(message.Exception, message.Message ?? "An exception bubbled up: ");
+				_logger.LogError(message.Exception, "An exception bubbled up: {message}", message.Message);
 				break;
 			case LogSeverity.Info:
-				_logger.LogInformation(message.ToString(prependTimestamp: false));
+				_logger.LogInformation("{message}", message.ToString(prependTimestamp: false));
 				break;
 			case LogSeverity.Verbose:
-				_logger.LogTrace(message.ToString(prependTimestamp: false));
+				_logger.LogTrace("{message}", message.ToString(prependTimestamp: false));
 				break;
 		}
 

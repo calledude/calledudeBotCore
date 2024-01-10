@@ -162,7 +162,7 @@ public class OsuUserServiceTests
 
 		Assert.NotNull(callback);
 
-		var cts = new CancellationTokenSource();
+		using var cts = new CancellationTokenSource();
 		cts.Cancel();
 		await callback!.Invoke(cts.Token);
 

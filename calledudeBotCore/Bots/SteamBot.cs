@@ -56,13 +56,14 @@ public class SteamBot : Bot<IrcMessage>, ISteamBot
 		_manager.Subscribe<SteamFriends.FriendsListCallback>(c => _calledude = c.FriendList[0].SteamID);
 	}
 
-	public override Task StartAsync(CancellationToken cancellationToken)
+	public override async Task StartAsync(CancellationToken cancellationToken)
 	{
 		_hostCancellationToken = cancellationToken;
 		_cts = new CancellationTokenSource();
-		var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_hostCancellationToken, _cts.Token);
+
+		using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_hostCancellationToken, _cts.Token);
 		_steamClient.Connect();
-		return Task.Factory.StartNew(() =>
+		await Task.Factory.StartNew(() =>
 		{
 			while (!linkedTokenSource.IsCancellationRequested)
 			{

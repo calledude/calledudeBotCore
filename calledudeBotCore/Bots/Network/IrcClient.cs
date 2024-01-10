@@ -92,7 +92,7 @@ public sealed class IrcClient : IIrcClient
 		}
 	}
 
-	private async Task TryLogin(int tries = 1)
+	private async Task TryLogin(int tries = 0)
 	{
 		try
 		{
@@ -113,13 +113,14 @@ public sealed class IrcClient : IIrcClient
 				throw timeoutException;
 			}
 		}
-		catch (Exception e) when (tries <= 3)
+		catch (Exception e) when (tries < 3)
 		{
 			//TODO: Potentially run Setup()? Not sure if needed
 
+			tries++;
 			_logger.LogError(e, "Login failed, trying again. Attempts: {tries}", tries);
 			await Task.Delay(1000 * tries);
-			await TryLogin(++tries);
+			await TryLogin(tries);
 		}
 	}
 
