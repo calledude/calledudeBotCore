@@ -65,7 +65,7 @@ public sealed class OsuUserService : IOsuUserService
 		if (!success)
 			return null;
 
-		return users?.Single() ?? throw new Exception("Response from osu! was null (possibly invalid username)");
+		return users?.Single() ?? throw new InvalidOperationException("Response from osu! was null (possibly invalid username)");
 	}
 
 	public async Task<OsuUser?> GetOsuUser(string username)
