@@ -38,16 +38,16 @@ public class StatsCommandTests
             WatchTime = TimeSpan.FromSeconds(19)
         };
 
-        _userSessionsSingle = new List<UserSession>
-        {
+        _userSessionsSingle =
+        [
             _userSession1
-        };
+        ];
 
-        _userSessionsMultiple = new List<UserSession>
-        {
+        _userSessionsMultiple =
+        [
             _userSession1,
             _userSession2
-        };
+        ];
 
         _userActivity = new UserActivity
         {

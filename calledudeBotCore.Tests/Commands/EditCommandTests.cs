@@ -10,7 +10,7 @@ using Xunit;
 namespace calledudeBotCore.Tests.Commands;
 public class EditCommandTests
 {
-    private readonly Dictionary<string, Command> _commands = new();
+    private readonly Dictionary<string, Command> _commands = [];
     private readonly ICommandContainer _commandContainer;
     private readonly EditCommand _target;
 
@@ -99,7 +99,7 @@ public class EditCommandTests
         var existingCommand = new Command()
         {
             Name = commandName,
-            AlternateName = new List<string> { "!old" }
+            AlternateName = ["!old"]
         };
 
         _commands.Add(existingCommand);
@@ -122,7 +122,7 @@ public class EditCommandTests
         var existingCommand = new Command()
         {
             Name = commandName,
-            AlternateName = new List<string> { "!old", "!one", "!two" }
+            AlternateName = ["!old", "!one", "!two"]
         };
 
         _commands.Add(existingCommand);
@@ -182,10 +182,10 @@ public class EditCommandTests
             Name = commandName,
             Response = commandResponse,
             Description = description,
-            AlternateName = new List<string>
-            {
+            AlternateName =
+            [
                 "!someAlt"
-            }
+            ]
         };
 
         _commands.Add(existingCommand);

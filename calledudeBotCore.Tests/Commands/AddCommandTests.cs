@@ -12,7 +12,7 @@ public class AddCommandTests
 {
     private readonly AddCommand _target;
     private readonly ICommandContainer _commandContainer;
-    private readonly Dictionary<string, Command> _commands = new();
+    private readonly Dictionary<string, Command> _commands = [];
 
     public AddCommandTests()
     {
@@ -79,10 +79,10 @@ public class AddCommandTests
         _commands.Add(new Command
         {
             Name = "!somethingElse",
-            AlternateName = new List<string>
-            {
+            AlternateName =
+            [
                 conflictingName
-            }
+            ]
         });
 
         var messageContent = $"{_target.Name} {conflictingName} nah fam <nice>";

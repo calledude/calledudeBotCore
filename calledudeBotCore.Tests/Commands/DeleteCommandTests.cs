@@ -13,7 +13,7 @@ public class DeleteCommandTests
 {
     private readonly DeleteCommand _target;
     private readonly ICommandContainer _commandContainer;
-    private readonly Dictionary<string, Command> _commands = new();
+    private readonly Dictionary<string, Command> _commands = [];
 
     public DeleteCommandTests()
     {
@@ -54,7 +54,7 @@ public class DeleteCommandTests
         {
             Name = cmdName,
             Response = "hi :)",
-            AlternateName = new List<string> { alternateName }
+            AlternateName = [alternateName]
         };
 
         _commands.Add(commandToDelete);
@@ -77,7 +77,7 @@ public class DeleteCommandTests
         {
             Name = cmdName,
             Response = "hi :)",
-            AlternateName = new List<string> { alternateName }
+            AlternateName = [alternateName]
         };
 
         _commands.Add(commandToDelete);

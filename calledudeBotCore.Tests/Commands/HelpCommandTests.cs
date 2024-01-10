@@ -84,11 +84,11 @@ public class HelpCommandTests
         var command = new Command()
         {
             Name = commandName,
-            AlternateName = new List<string>
-            {
+            AlternateName =
+            [
                 "!test",
                 "!something"
-            }
+            ]
         };
 
         commandContainer.Value.Commands.Add(command);
@@ -110,11 +110,11 @@ public class HelpCommandTests
         var command = new Command()
         {
             Name = commandName,
-            AlternateName = new List<string>
-            {
+            AlternateName =
+            [
                 "!test",
                 "!something"
-            },
+            ],
             Description = description
         };
 

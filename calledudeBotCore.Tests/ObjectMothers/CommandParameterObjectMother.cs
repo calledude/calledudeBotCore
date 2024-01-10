@@ -6,7 +6,7 @@ namespace calledudeBotCore.Tests.ObjectMothers;
 
 public static class CommandParameterObjectMother
 {
-    private static readonly List<string> _prefix = new() { "!someCommand" };
+    private static readonly List<string> _prefix = ["!someCommand"];
 
     public static CommandParameter EmptyWithPrefixedWord => new CommandParameter<IrcMessage>(_prefix, MessageObjectMother.Empty);
 
