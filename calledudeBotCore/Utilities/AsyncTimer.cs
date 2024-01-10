@@ -27,8 +27,7 @@ public sealed class AsyncTimer : IAsyncTimer
 
 	public void Start(Func<CancellationToken, Task> callback, int intervalInMs, CancellationToken cancellationToken)
 	{
-		if (intervalInMs <= 0)
-			throw new ArgumentOutOfRangeException(nameof(intervalInMs));
+		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(intervalInMs);
 
 		if (_started)
 			return;
