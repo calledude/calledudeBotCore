@@ -13,9 +13,7 @@ using System.Threading.Tasks;
 
 namespace calledudeBot.Services;
 
-public interface IStreamMonitor : INotificationHandler<ReadyNotification>
-{
-}
+public interface IStreamMonitor : INotificationHandler<ReadyNotification>;
 
 public sealed class StreamMonitor : IStreamMonitor
 {

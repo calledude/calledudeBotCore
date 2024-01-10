@@ -22,13 +22,9 @@ public interface ITwitchConfig
     public bool IsUser { get; init; }
 }
 
-public interface ITwitchUserConfig : ITwitchConfig
-{
-}
+public interface ITwitchUserConfig : ITwitchConfig;
 
-public interface ITwitchBotConfig : ITwitchConfig
-{
-}
+public interface ITwitchBotConfig : ITwitchConfig;
 
 public class TwitchBotConfig : ITwitchBotConfig, ITwitchUserConfig
 {

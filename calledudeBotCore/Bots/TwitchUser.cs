@@ -4,9 +4,7 @@ using calledudeBot.Config;
 
 namespace calledudeBot.Bots;
 
-public interface ITwitchUser : IMessageBot<IrcMessage>
-{
-}
+public interface ITwitchUser : IMessageBot<IrcMessage>;
 
 public class TwitchUser : TwitchBotBase, ITwitchUser
 {
